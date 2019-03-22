@@ -1,0 +1,22 @@
+Package: simplexgb
+Type: Package
+Title: Simple wrapper for xgboost
+Version: 0.0.0.9000
+Author: Prasanna Bhogale
+Maintainer: The package maintainer <pbhogale@gmail.com>
+Description: Handles simple xgb workflows letting you go from a data frame to a model without worrying about matrices and details.
+Depends: R (>= 3.5.0)
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    dplyr,
+    magrittr,
+    gestalt,
+    ggthemes,
+    testthat
+RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
