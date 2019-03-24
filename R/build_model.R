@@ -24,13 +24,13 @@ guess_hyperparameters <- function(train_structure,
   hyperparameters[["depth"]] <- max(depth, floor(sqrt(ncol(train_structure$data))))
   hyperparameters[["n_estimators"]] <- max(n_estimators, exp(floor(log(nrow(train_structure$data)))-2))
   hyperparameters[["learning_rate"]] <- min(learning_rate, 1/(log(hyperparameters[["n_estimators"]]*hyperparameters[["depth"]])))
-  class_target <- class(train_structure$data[[train_structure$target_variable]])
-  if(class_target != "numeric"){
+  class_target <- ("target_reference" %in% names(train_structure))
+  if(class_target){
     hyperparameters[["objective_function"]] <- "multi:softprob"
     hyperparameters[["eval_metric"]] <- "mlogloss"
     hyperparameters[["num_class"]] <- train_structure$data[[train_structure$target_variable]] %>% dplyr::n_distinct()
   } else {
-    hyperparameters[["objective_function"]] <- "reg:squarederror"
+    hyperparameters[["objective_function"]] <- "reg:linear"
     hyperparameters[["eval_metric"]] <- "mae"
   }
   if(!is.na(objective_function)){
@@ -43,9 +43,33 @@ guess_hyperparameters <- function(train_structure,
   return(hyperparameters)
 }
 
-cross_validate <- function(train_structure, hyperparameters, nrounds = 5){
+cross_validate <- function(train_structure, hyperparameters, nfold = 5){
   xgb_params <- list("objective" = hyperparameters[["objective_function"]],
                      "eval_metric" = hyperparameters[["eval_metric"]],
                      "eta" = hyperparameters[["learning_rate"]],
-                     "max_depth" = hyperparameters[["depth"]])
+                     "max_depth" = hyperparameters[["depth"]],
+                     "n_estimators" = hyperparameters[["n_estimators"]])
+  if("num_class" %in% names(hyperparameters)){
+    xgb_params[["num_class"]] <- hyperparameters[["num_class"]]
+  }
+  features <-Matrix::sparse.model.matrix(as.formula(paste(train_structure$target_variable, "~ .")),
+                                  data = train_structure$data)[,-1]
+  lab <- train_structure$data[[train_structure$target_variable]]
+  dtrain <- xgboost::xgb.DMatrix(data = features, label = lab)
+  cv_model <- xgboost::xgb.cv(params = xgb_params,
+                              data = dtrain,
+                              verbose = F,
+                              nfold = nfold,
+                              nrounds = hyperparameters[["nrounds"]],
+                              prediction = T)
+  if("num_class" %in% names(hyperparameters)){
+    OOF_prediction <- tibble::tibble(cv_model$pred) %>%
+      dplyr::mutate(max_prob = max.col(., ties.method = "last")) %>%
+      dplyr::mutate(label = lab+1)
+    cm <- caret::confusionMatrix(factor(OOF_prediction$max_prob),
+                          factor(OOF_prediction$label),
+                          mode = "everything")
+    print(cm)
+  }
+  return(cv_model)
 }

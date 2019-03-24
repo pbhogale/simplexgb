@@ -89,13 +89,37 @@ get_train_levels <- function(df){
     }
   }
 
-  if(coln_class[[colns[i]]][1]=="numeric"){
-    for(i in 1:length(colns)){
-      levels_store[[colns[i]]] <- c(levels_store[[colns[i]]], rep(levels_store[[colns[i]]][1],max_levels - length(levels_store[[colns[i]]])))
-    }
+  for(i in 1:length(colns)){
+    levels_store[[colns[i]]] <- c(levels_store[[colns[i]]], rep(levels_store[[colns[i]]][1],max_levels - length(levels_store[[colns[i]]])))
   }
+
   levels_df <- levels_store %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
   return(levels_df)
+}
+
+#' This function converts the target variable to integer if it is a
+#' categorical variable. and builds a map of the transformation.
+#' @inheritParams normalize_df
+#' @return list
+transform_target_variable <- function(df, target_variable){
+  return_structure <-  list()
+  return_df <- list()
+  if(class(df[[target_variable]]) != "numeric"){
+    return_df[[target_variable]] <- as.integer(df[[target_variable]])-1
+    return_df[[paste("original",target_variable,sep = "_")]] <- df[[target_variable]]
+    return_df <- tibble::as_tibble(return_df)
+    reference_df <- return_df %>%
+      dplyr::group_by_at(paste("original",target_variable,sep = "_")) %>%
+      dplyr::summarise_at(.vars = target_variable, .funs = min) %>%
+      dplyr::mutate_at(.vars = target_variable, .funs = as.integer)
+    return_df[[paste("original",target_variable,sep = "_")]] <- NULL
+    return_structure[["new_target"]] <- return_df
+    return_structure[["target_reference"]] <- reference_df
+  } else {
+    return_structure[["new_target"]] <- NA
+    return_structure[["target_reference"]] <- NA
+  }
+  return(return_structure)
 }
 
 #' this function takes a data frame and the target variable and
@@ -105,9 +129,14 @@ get_train_levels <- function(df){
 #' @return list of data frames
 prepare_training_set <- function(df, target_variable = "y"){
   train_data <- normalize_df(df, target_variable)
+  target_reference <- transform_target_variable(df, target_variable)
   train_facs <- get_normalizing_factors(df, target_variable)
   train_levels <- get_train_levels(df)
   train_structure <- list()
+  if(class(df[[target_variable]]) != "numeric"){
+    train_data[[target_variable]] <- target_reference[["new_target"]][["Species"]]
+    train_structure[["target_reference"]] <- target_reference[["target_reference"]]
+  }
   train_structure[["data"]] <- train_data
   train_structure[["normalize_by"]] <- train_facs
   train_structure[["levels"]] <- train_levels

@@ -34,11 +34,15 @@ test_that("uninformative columns are removed",{
 })
 
 test_that("the train levels returned are correct",{
-  expect_equal(get_train_levels(iris)[["Species"]], forcats::fct_unique(iris$Species))
+  expect_equal(get_train_levels(iris)[["Species"]], unique(as.integer(iris$Species)))
+})
+
+test_that("making sure that the categorical target variable map is okay", {
+  expect_match(as.character(transform_target_variable(iris, "Species")[["target_reference"]][["original_Species"]][1]), "setosa")
 })
 
 test_that("the prepared training data can be used",{
   expect_equal(prepare_training_set(iris, "Species")$data[["Sepal.Length"]][1],-0.89767388, tolerance=1e-3)
   expect_equal(prepare_training_set(iris, "Species")$normalize_by[["Sepal.Length"]][1],5.8433, tolerance=1e-3)
-  expect_match(as.character(prepare_training_set(iris, "Species")$levels[["Species"]][1]),"setosa")
+  expect_match(as.character(prepare_training_set(iris, "Species")$levels[["Species"]][1]),"1")
 })

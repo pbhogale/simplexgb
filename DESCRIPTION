@@ -14,7 +14,9 @@ Imports:
     magrittr,
     gestalt,
     ggthemes,
-    testthat
+    testthat,
+    caret,
+    e1071
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,
