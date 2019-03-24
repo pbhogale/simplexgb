@@ -62,6 +62,8 @@ cross_validate <- function(train_structure, hyperparameters, nfold = 5){
                               nfold = nfold,
                               nrounds = hyperparameters[["nrounds"]],
                               prediction = T)
+  ret_struct <- list()
+  ret_struct[["cv_model"]] <- cv_model
   if("num_class" %in% names(hyperparameters)){
     OOF_prediction <- tibble::tibble(cv_model$pred) %>%
       dplyr::mutate(max_prob = max.col(., ties.method = "last")) %>%
@@ -69,7 +71,10 @@ cross_validate <- function(train_structure, hyperparameters, nfold = 5){
     cm <- caret::confusionMatrix(factor(OOF_prediction$max_prob),
                           factor(OOF_prediction$label),
                           mode = "everything")
-    print(cm)
+    ret_struct[["confusion_matrix"]] <- cm
+    ret_struct[["metric"]] <- cv_model$evaluation_log$test_mlogloss_mean[length(cv_model$evaluation_log$test_mlogloss_mean)]
+  } else {
+    ret_struct[["metric"]] <- cv_model$evaluation_log$test_mae_mean[length(cv_model$evaluation_log$test_mae_mean)]
   }
-  return(cv_model)
+  return(ret_struct)
 }
