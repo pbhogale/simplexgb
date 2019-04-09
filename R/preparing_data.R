@@ -2,6 +2,7 @@
 #' so that the test dataset can be processed similarly
 #' @inheritParams normalize_df
 #' @return data frame with the normalizing factors
+#' @export
 get_normalizing_factors <- function(df, target_variable=NA){
   colns <- colnames(df)
   coln_class <- df %>%
