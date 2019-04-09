@@ -7,6 +7,9 @@ like factors with only one level}
 \usage{
 remove_uninformative(df)
 }
+\arguments{
+\item{df}{a data frame}
+}
 \value{
 data frame with uninformative columns removed
 }
