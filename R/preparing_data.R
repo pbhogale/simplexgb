@@ -1,3 +1,4 @@
+#' @export
 #' this function returns the factors by which a df was normalized,
 #' so that the test dataset can be processed similarly
 #' @inheritParams normalize_df
@@ -25,6 +26,7 @@ get_normalizing_factors <- function(df, target_variable=NA){
   return(facs_df)
 }
 
+#' @export
 #' This function normalizes the n umeric columns in a data frame by
 #' subtracting the mean and dividing by the standard deviation
 #' given by the df from get_normalizing_factors
@@ -41,6 +43,7 @@ normalize_df <- function(df, target_variable=NA, facs_df){
   return(df)
 }
 
+#' @export
 #' remove columns from the df that contain no information,
 #' like factors with only one level
 #' @return data frame with uninformative columns removed
@@ -55,6 +58,7 @@ remove_uninformative <- function(df){
 }
 
 
+#' @export
 #' This function returns a data frame of all the various categories in the
 #' training set, so that these are available while pre-processing the test set
 #' @param df the training set data frame
@@ -86,6 +90,7 @@ get_train_levels <- function(df){
   return(levels_df)
 }
 
+#' @export
 #' This function converts the target variable to integer if it is a
 #' categorical variable. and builds a map of the transformation.
 #' @inheritParams normalize_df
@@ -111,6 +116,7 @@ transform_target_variable <- function(df, target_variable){
   return(return_structure)
 }
 
+#' @export
 #' this function takes a data frame and the target variable and
 #' returns a data structure with everything needed to train and
 #' predict with the model.
