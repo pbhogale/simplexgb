@@ -72,7 +72,7 @@ get_train_levels <- function(df){
   levels_store <- list()
   for(i in 1:length(colns)){
     if(coln_class[[colns[i]]][1]!="numeric"){
-      levels_store[[colns[i]]] <- df[[colns[i]]] %>% forcats::fct_unique()
+      levels_store[[colns[i]]] <- df[[colns[i]]] %>% as.factor() %>% forcats::fct_unique()
       if(length(levels_store[[colns[i]]])>max_levels){
         max_levels <- length(levels_store[[colns[i]]])
       }
