@@ -13,11 +13,14 @@ Imports:
     xgboost,
     dplyr,
     magrittr,
-    gestalt,
     ggthemes,
     testthat,
     caret,
-    e1071
+    e1071,
+    forcats,
+    tibble,
+    Matrix,
+    qpdf
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,
