@@ -2,7 +2,7 @@
 #' so that the test dataset can be processed similarly
 #' @inheritParams normalize_df
 #' @return data frame with the normalizing factors
-#' @export
+
 get_normalizing_factors <- function(df, target_variable=NA){
   colns <- colnames(df)
   coln_class <- df %>%
@@ -34,7 +34,7 @@ get_normalizing_factors <- function(df, target_variable=NA){
 #' @param target_variable a string name for the target variable
 #' @param facs_df the factors to normalize by
 #' @return a data frame with numerical columns normalized
-#' @export
+
 normalize_df <- function(df, target_variable=NA, facs_df){
   norm_colns <- colnames(facs_df)
   for(i in 1:length(norm_colns)){
@@ -48,7 +48,7 @@ normalize_df <- function(df, target_variable=NA, facs_df){
 #' remove columns from the df that contain no information,
 #' like factors with only one level
 #' @return data frame with uninformative columns removed
-#' @export
+
 remove_uninformative <- function(df){
   colns <- colnames(df)
   for(i in 1:length(colns)){
@@ -65,7 +65,7 @@ remove_uninformative <- function(df){
 #' training set, so that these are available while pre-processing the test set
 #' @param df the training set data frame
 #' @return a data frame with all the columns and all levels in the categorical columns
-#' @export
+
 get_train_levels <- function(df){
   colns <- colnames(df)
   coln_class <- df %>%
@@ -97,7 +97,7 @@ get_train_levels <- function(df){
 #' categorical variable. and builds a map of the transformation.
 #' @inheritParams normalize_df
 #' @return list
-#' @export
+
 transform_target_variable <- function(df, target_variable){
   return_structure <-  list()
   return_df <- list()
@@ -127,6 +127,7 @@ transform_target_variable <- function(df, target_variable){
 #' @return list of data frames
 #' @export
 #' prepare_training_set()
+
 prepare_training_set <- function(df, target_variable = "y"){
   train_facs <- get_normalizing_factors(df, target_variable)
   train_data <- normalize_df(df, target_variable, train_facs)
