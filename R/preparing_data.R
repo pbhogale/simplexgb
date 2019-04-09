@@ -126,6 +126,7 @@ transform_target_variable <- function(df, target_variable){
 #' @inheritParams normalize_df
 #' @return list of data frames
 #' @export
+#' prepare_training_set()
 prepare_training_set <- function(df, target_variable = "y"){
   train_facs <- get_normalizing_factors(df, target_variable)
   train_data <- normalize_df(df, target_variable, train_facs)
