@@ -64,6 +64,7 @@ remove_uninformative <- function(df){
 #' training set, so that these are available while pre-processing the test set
 #' @param df the training set data frame
 #' @return a data frame with all the columns and all levels in the categorical columns
+#' @export
 get_train_levels <- function(df){
   colns <- colnames(df)
   coln_class <- df %>%
