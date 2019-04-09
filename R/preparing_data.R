@@ -34,6 +34,7 @@ get_normalizing_factors <- function(df, target_variable=NA){
 #' @param target_variable a string name for the target variable
 #' @param facs_df the factors to normalize by
 #' @return a data frame with numerical columns normalized
+#' @export
 normalize_df <- function(df, target_variable=NA, facs_df){
   norm_colns <- colnames(facs_df)
   for(i in 1:length(norm_colns)){
@@ -96,6 +97,7 @@ get_train_levels <- function(df){
 #' categorical variable. and builds a map of the transformation.
 #' @inheritParams normalize_df
 #' @return list
+#' @export
 transform_target_variable <- function(df, target_variable){
   return_structure <-  list()
   return_df <- list()
