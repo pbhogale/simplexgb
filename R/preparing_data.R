@@ -18,7 +18,7 @@ get_normalizing_factors <- function(df, target_variable=NA){
   facs <- list()
   for(i in 1:length(selected_colns)){
     temp <- df[[selected_colns[i]]] - mean(df[[selected_colns[i]]])
-    facs[[selected_colns[i]]] <- c(mean(df[[selected_colns[i]]]), sd(temp))
+    facs[[selected_colns[i]]] <- c(mean(df[[selected_colns[i]]], na.rm = T), sd(temp, na.rm = T))
   }
 
   facs_df <- facs %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
