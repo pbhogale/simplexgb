@@ -3,5 +3,6 @@
 export(cross_validate)
 export(get_normalizing_factors)
 export(get_predictions)
+export(get_train_levels)
 export(prepare_training_set)
 export(train_model)
