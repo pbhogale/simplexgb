@@ -41,6 +41,12 @@ normalize_df <- function(df, target_variable=NA, facs_df){
     df[[norm_colns[i]]] <- (df[[norm_colns[i]]] - facs_df[[norm_colns[i]]][1])
     df[[norm_colns[i]]] <- (df[[norm_colns[i]]] / facs_df[[norm_colns[i]]][2])
   }
+  other_columns <- colnames(df)
+  for(i in 1:length(other_columns)){
+    if(!(other_columns[i] %in% norm_colns)){
+      df[[other_columns[i]]] <- df[[other_columns[i]]] %>% as.factor()
+    }
+  }
   return(df)
 }
 
@@ -85,7 +91,13 @@ get_train_levels <- function(df){
   }
 
   for(i in 1:length(colns)){
+    if(coln_class[[colns[i]]][1]!="numeric"){
+      levels_store[[colns[i]]] <- as.character(levels_store[[colns[i]]])
+    }
     levels_store[[colns[i]]] <- c(levels_store[[colns[i]]], rep(levels_store[[colns[i]]][1],max_levels - length(levels_store[[colns[i]]])))
+    if(coln_class[[colns[i]]][1]!="numeric"){
+      levels_store[[colns[i]]] <- as.factor(levels_store[[colns[i]]])
+    }
   }
 
   levels_df <- levels_store %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
