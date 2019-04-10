@@ -131,11 +131,11 @@ train_model <- function(train_structure, hyperparameters){
 #' @param test_df
 #' @export
 get_predictions <- function(model_structure, test_df){
-  if('target_reference' %in% names(model_structure)){
-    temp_target <- case_when(
-      test_df[['target_variable']]
-    )
-  }
+  # if('target_reference' %in% names(model_structure)){
+  #   temp_target <- case_when(
+  #     test_df[['target_variable']]
+  #   )
+  # }
   norm_test_df <- normalize_df(test_df,
                                facs_df = model_structure[['normalize_by']]) %>%
     rbind(model_structure[['levels']])
