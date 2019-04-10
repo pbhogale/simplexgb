@@ -114,7 +114,7 @@ transform_target_variable <- function(df, target_variable){
   return_structure <-  list()
   return_df <- list()
   if(class(df[[target_variable]]) != "numeric"){
-    return_df[[target_variable]] <- as.integer(df[[target_variable]])-1
+    return_df[[target_variable]] <- as.integer(df[[target_variable]])
     return_df[[paste("original",target_variable,sep = "_")]] <- df[[target_variable]]
     return_df <- tibble::as_tibble(return_df)
     reference_df <- return_df %>%
