@@ -44,5 +44,4 @@ test_that("making sure that the categorical target variable map is okay", {
 test_that("the prepared training data can be used",{
   expect_equal(prepare_training_set(iris, "Species")$data[["Sepal.Length"]][1],-0.89767388, tolerance=1e-3)
   expect_equal(prepare_training_set(iris, "Species")$normalize_by[["Sepal.Length"]][1],5.8433, tolerance=1e-3)
-  expect_match(as.character(prepare_training_set(iris, "Species")$levels[["Species"]][1]),"setosa")
 })
