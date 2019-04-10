@@ -43,7 +43,7 @@ normalize_df <- function(df, target_variable=NA, facs_df){
   }
   other_columns <- colnames(df)
   for(i in 1:length(other_columns)){
-    if(!(other_columns[i] %in% norm_colns)){
+    if(!(other_columns[i] %in% norm_colns) & (other_columns[i] != target_variable)){
       df[[other_columns[i]]] <- df[[other_columns[i]]] %>% as.factor()
     }
   }

@@ -1,6 +1,6 @@
 data(iris)
 test_normalize_df <- function(){
-  test_df <- normalize_df(iris, facs_df = get_normalizing_factors(iris))
+  test_df <- normalize_df(iris, "Species", facs_df = get_normalizing_factors(iris))
   return(mean(test_df$Sepal.Length))
 }
 
@@ -10,7 +10,7 @@ test_that("normalizing gives means close to 0", {
 
 test_normalizing_factors <- function(){
   test_facs <- get_normalizing_factors(iris)
-  test_df <- normalize_df(iris, facs_df = test_facs)
+  test_df <- normalize_df(iris, "Species", facs_df = test_facs)
   colns <- colnames(test_facs)
   for(i in 1:length(colns)){
     test_df[[colns[i]]] <- test_df[[colns[i]]] * test_facs[[colns[i]]][2]

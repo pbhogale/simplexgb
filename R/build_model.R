@@ -22,8 +22,8 @@ guess_hyperparameters <- function(train_structure,
                                   objective_function = NA,
                                   eval_metric = NA){
   hyperparameters <- list()
-  hyperparameters[["depth"]] <- max(depth, floor(sqrt(ncol(train_structure$data))))
-  hyperparameters[["n_estimators"]] <- max(n_estimators, exp(floor(log(nrow(train_structure$data)))-2))
+  hyperparameters[["depth"]] <- max(depth, floor(sqrt(ncol(train_structure$data))))*2
+  hyperparameters[["n_estimators"]] <- max(n_estimators, exp(floor(log(nrow(train_structure$data)))-2))*2
   hyperparameters[["learning_rate"]] <- min(learning_rate, 1/(log(hyperparameters[["n_estimators"]]*hyperparameters[["depth"]])))
   class_target <- ("target_reference" %in% names(train_structure))
   if(class_target){
@@ -131,14 +131,37 @@ train_model <- function(train_structure, hyperparameters){
 #' @param test_df
 #' @export
 get_predictions <- function(model_structure, test_df){
-  # if('target_reference' %in% names(model_structure)){
-  #   temp_target <- case_when(
-  #     test_df[['target_variable']]
-  #   )
-  # }
+  levels_df <- model_structure[['levels']]
+  test_cols <- colnames(test_df)
+  level_cols <- colnames(levels_df)
+  for(i in 1:length(level_cols)){
+    if(!(level_cols[i] %in% test_cols))
+      levels[[level_cols[[i]]]] <- NULL
+  }
   norm_test_df <- normalize_df(test_df,
-                               facs_df = model_structure[['normalize_by']]) %>%
-    rbind(model_structure[['levels']])
-
-  return(norm_test_df)
+                               facs_df = model_structure[['normalize_by']],
+                               target_variable = model_structure[["target_variable"]]) %>%
+    rbind(levels_df)
+  norm_test_df[[model_structure[["target_variable"]]]] <- NULL
+  norm_test_df[["an_impossible_name"]] <- 0
+  features <- Matrix::sparse.model.matrix(an_impossible_name ~ ., data = norm_test_df)[,-1]
+  dtest <- xgboost::xgb.DMatrix(data = features)
+  preds <- predict(model_structure[["model"]], dtest)
+  if(model_structure[["model"]][["params"]][["objective"]] == "multi:softprob"){
+    prob_matrix <- matrix(preds, nrow = nrow(norm_test_df), byrow = T)
+    predictions <- tibble::as_tibble(prob_matrix) %>% head(nrow(test_df))
+    colnames(predictions) <- as.character(tmo_c[["target_reference"]][[1]])
+    cat_df <- predictions %>%
+      tibble::rownames_to_column("row_id") %>%
+      dplyr::mutate(row_id = as.numeric(row_id)) %>%
+      tidyr::gather(category, value, -row_id) %>%
+      dplyr::group_by(row_id) %>%
+      dplyr::slice(which.max(value)) %>%
+      dplyr::arrange(row_id)
+    predictions[["category"]] <- cat_df[["category"]]
+  } else{
+    predictions <- tibble::tibble(prediction = preds[1:nrow(test_df)])
+    colnames(predictions) <- model_structure[["target_variable"]]
+  }
+  return(predictions)
 }
