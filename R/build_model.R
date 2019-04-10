@@ -13,6 +13,7 @@
 #' @param nrounds the number of rounds of training
 #' @param objective_function
 #' @param eval_metric
+#' @export
 guess_hyperparameters <- function(train_structure,
                                   n_estimators = 1000,
                                   learning_rate = 0.1,
