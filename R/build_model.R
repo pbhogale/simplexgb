@@ -138,6 +138,7 @@ get_predictions <- function(model_structure, test_df){
     if(!(level_cols[i] %in% test_cols))
       levels[[level_cols[[i]]]] <- NULL
   }
+  test_df[[model_structure[["target_variable"]]]] <- NULL
   norm_test_df <- normalize_df(test_df,
                                facs_df = model_structure[['normalize_by']],
                                target_variable = model_structure[["target_variable"]]) %>%
