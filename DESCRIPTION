@@ -19,8 +19,7 @@ Imports:
     e1071,
     forcats,
     tibble,
-    Matrix,
-    qpdf
+    Matrix
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,
