@@ -130,7 +130,8 @@ train_model <- function(train_structure, hyperparameters){
 #' @param model_structure
 #' @param test_df
 #' @export
-get_predictions <- function (model_structure, test_df) {
+get_predictions <- function (model_structure, test_df)
+{
   levels_df <- model_structure[["levels"]]
   test_cols <- colnames(test_df)
   level_cols <- colnames(levels_df)
@@ -140,12 +141,11 @@ get_predictions <- function (model_structure, test_df) {
   }
   test_df[[model_structure[["target_variable"]]]] <- NULL
   norm_test_df <- normalize_df(test_df, facs_df = model_structure[["normalize_by"]],
-                               target_variable = model_structure[["target_variable"]]) %>%
-    rbind(levels_df)
+                               target_variable = model_structure[["target_variable"]])
+  norm_test_df <- rbind(levels_df,norm_test_df)
   norm_test_df[[model_structure[["target_variable"]]]] <- 0
-  norm_test_df <- norm_test_df[nrow(norm_test_df):1, ]
   features <- Matrix::sparse.model.matrix(as.formula(paste(model_structure[["target_variable"]],"~ .")),
-                                          data = norm_test_df)[, -1]
+                                          data = norm_test_df, row.names = F)[, -1]
   dtest <- xgboost::xgb.DMatrix(data = features)
   preds <- predict(model_structure[["model"]], dtest)
   if (model_structure[["model"]][["params"]][["objective"]] ==
