@@ -145,12 +145,13 @@ get_predictions <- function(model_structure, test_df){
     rbind(levels_df)
   norm_test_df[[model_structure[["target_variable"]]]] <- NULL
   norm_test_df[["an_impossible_name"]] <- 0
+  norm_test_df <- norm_test_df[nrow(norm_test_df):1,]
   features <- Matrix::sparse.model.matrix(an_impossible_name ~ ., data = norm_test_df)[,-1]
   dtest <- xgboost::xgb.DMatrix(data = features)
   preds <- predict(model_structure[["model"]], dtest)
   if(model_structure[["model"]][["params"]][["objective"]] == "multi:softprob"){
     prob_matrix <- matrix(preds, nrow = nrow(norm_test_df), byrow = T)
-    predictions <- tibble::as_tibble(prob_matrix) %>% head(nrow(test_df))
+    predictions <- tibble::as_tibble(prob_matrix) %>% tail(nrow(test_df))
     colnames(predictions) <- as.character(tmo_c[["target_reference"]][[1]])
     cat_df <- predictions %>%
       tibble::rownames_to_column("row_id") %>%
