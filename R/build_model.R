@@ -40,7 +40,7 @@ guess_hyperparameters <- function(train_structure,
   if(!is.na(eval_metric)){
     hyperparameters[["eval_metric"]] <- eval_metric
   }
-  hyperparameters[["nrounds"]] <- max(nrounds, sqrt(floor(hyperparameters[["depth"]]*sqrt(hyperparameters[["n_estimators"]]))))
+  hyperparameters[["nrounds"]] <- max(nrounds, floor(hyperparameters[["depth"]]*sqrt(hyperparameters[["n_estimators"]])))
   return(hyperparameters)
 }
 
