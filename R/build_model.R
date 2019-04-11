@@ -146,7 +146,6 @@ get_predictions <- function (model_structure, test_df) {
   norm_test_df <- norm_test_df[nrow(norm_test_df):1, ]
   features <- Matrix::sparse.model.matrix(as.formula(paste(model_structure[["target_variable"]],"~ .")),
                                           data = norm_test_df)[, -1]
-  print(colnames(features))
   dtest <- xgboost::xgb.DMatrix(data = features)
   preds <- predict(model_structure[["model"]], dtest)
   if (model_structure[["model"]][["params"]][["objective"]] ==
