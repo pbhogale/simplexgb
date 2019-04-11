@@ -22,8 +22,8 @@ guess_hyperparameters <- function(train_structure,
                                   objective_function = NA,
                                   eval_metric = NA){
   hyperparameters <- list()
-  hyperparameters[["depth"]] <- max(depth, floor(sqrt(ncol(train_structure$data))))*2
-  hyperparameters[["n_estimators"]] <- max(n_estimators, exp(floor(log(nrow(train_structure$data)))-2))*2
+  hyperparameters[["depth"]] <- max(depth, floor(sqrt(ncol(train_structure$data))))
+  hyperparameters[["n_estimators"]] <- max(n_estimators, exp(floor(log(nrow(train_structure$data)))-2))
   hyperparameters[["learning_rate"]] <- min(learning_rate, 1/(log(hyperparameters[["n_estimators"]]*hyperparameters[["depth"]])))
   class_target <- ("target_reference" %in% names(train_structure))
   if(class_target){
@@ -40,7 +40,7 @@ guess_hyperparameters <- function(train_structure,
   if(!is.na(eval_metric)){
     hyperparameters[["eval_metric"]] <- eval_metric
   }
-  hyperparameters[["nrounds"]] <- max(nrounds, floor(hyperparameters[["depth"]]*sqrt(hyperparameters[["n_estimators"]])))
+  hyperparameters[["nrounds"]] <- max(nrounds, sqrt(floor(hyperparameters[["depth"]]*sqrt(hyperparameters[["n_estimators"]]))))
   return(hyperparameters)
 }
 
