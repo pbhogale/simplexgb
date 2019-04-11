@@ -98,6 +98,9 @@ get_train_levels <- function(df){
     if(coln_class[[colns[i]]][1]!="numeric"){
       levels_store[[colns[i]]] <- as.factor(levels_store[[colns[i]]])
     }
+    if(coln_class[[colns[i]]][1]=="numeric"){
+      levels_store[[colns[i]]] <- rnorm(length(levels_store[[colns[i]]]), 0, 1)
+    }
   }
 
   levels_df <- levels_store %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
