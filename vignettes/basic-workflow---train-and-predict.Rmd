@@ -1,6 +1,6 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "simplexgb workflow"
+author: "Prasanna Bhogale"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -16,50 +16,82 @@ knitr::opts_chunk$set(
 )
 ```
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+Data munging is hard, needs intuition and craftsmanship, but most ML issues are quite standard once the data has been understood. `simplexgb` is intended to help you handle most ML usecases without straying too far from the [tidyverse](https://www.tidyverse.org/), while still utilizing the versatility and scalability of [xgboost](https://xgboost.readthedocs.io/en/latest/). To setup xgboost correctly on your system so that it uses all your cores/GPUs to train, see [this page](https://xgboost.readthedocs.io/en/latest/build.html).
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+## The workflow
 
-## Vignette Info
+Before attempting any machine learning, you should do your best to understand your data and develop some intuition for what it is telling you. If you are new to data science, there is no better place to start than [R for data science](https://r4ds.had.co.nz/).
+To framed the business/scientific challenge you are tackling in terms of a classification or regression problem, you should have have a *target variable* and other variables that provide some information pertinent to predicting the value of the target variable, these are called *predictors*. 
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+1. **Tidy data :** this term refers to an organization of your data so that each row is one observation (one instance of known values of predictors and the known value of the target variable), and is explained [here](http://vita.had.co.nz/papers/tidy-data.html).
 
-## Styles
+We first illustrate the workflow with a regression problem, and then repeat the steps with a classification problem. We are going to use weather data from NASA. 
 
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+2. **Preparing the training data :** xgboost requires the data to be in a particular format, for example, categorical variables need to be encoded as factors and then converted to a simple binary format via a process called [one hot encoding](https://en.wikipedia.org/wiki/One-hot). The `prepare_training_set` function takes in your data frame and the name of your target variable and does all the leg work for you, putting together a data structure that other functions from `simplexgb` can work with. 
 
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+```{r}
+library(nasaweather)
+library(tidyverse)
+data(atmos)
+atmos %>% head()
+df <- atmos %>% 
+  mutate(season = case_when(
+    month %in% c(11,12,1,2) ~ 'winter',
+    month %in% c(3,4) ~ 'spring',
+    month %in% c(5,6,7,8) ~ 'summer',
+    month %in% c(9,10) ~ 'autumn'
+  )) %>% 
+  mutate(month = as.numeric(month)) %>% 
+  na.omit()
+df %>% head()
+train_struct <- prepare_training_set(df = df, target_variable = 'temp')
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+3. **Guess hyperparameters :** `simplexgb` takes some reasonable values of relevant hyperparameters depending on the size of your data set. You can tune these for better performance as you iterate. For now, we will simply take the default guesses that `simplexgb` generates for us. 
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+```{r}
+hyp <- guess_hyperparameters(train_structure = train_struct)
+hyp %>% print()
 ```
 
-Also a quote using `>`:
+`simplexgb` has spotted our problem to be a regression problem and chosen an appropriate objective function and evaluation metric. 
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+4. **Evaluate performance :** For any dataset (that includes some work on feature engineering) and a set of hyperparameters, we should evaluate how well a model with those hyperparameters trained on that dataset will perform using cross validation. 
+
+```{r}
+cv_results <- cross_validate(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
+print(cv_results$metric)
+hyp_more <- guess_hyperparameters(train_structure = train_struct, n_estimators = 50000)
+cv_results_more <- cross_validate(train_structure = train_struct, hyperparameters = hyp_more, nfold = 5)
+print(cv_results_more$metric)
+```
+Just to illustrate the point, we added more estimators and obrained a marginal improvement in our metric. the `cv_results` structure has a lot of information useful for evaluating a model, but it is summarised in one number, the metric averaged over the folds of the CV. 
+
+5. **Train the model :** We keep aside a few observations to test our model with, and use the rest of our data to train a model.
+
+```{r}
+smp_size <- floor(0.95 * nrow(df))
+set.seed(123)
+train_ind <- sample(seq_len(nrow(df)), size = smp_size)
+
+train_df <- df[train_ind, ]
+test_df <- df[-train_ind, ]
+
+train_struct <- prepare_training_set(train_df, target_variable = 'temp')
+hyp <- guess_hyperparameters(train_structure = train_struct, n_estimators = 100000, depth = 4)
+xgbmodel <- train_model(train_structure = train_struct, hyperparameters = hyp)
+```
+
+
+6. **Predict on the test set :** Nothing could be simpler. 
+
+```{r}
+pred_df <- get_predictions(xgbmodel, test_df = test_df)
+pred_df %>% head()
+test_df_preds <- test_df %>% 
+  mutate(preds = pred_df$temp)
+ggplot(test_df_preds, aes(x = temp, y = preds)) +
+  geom_point(alpha = 0.05) +
+  geom_abline(slope = 1, intercept = 0, alpha = 0.3)
+```
+
