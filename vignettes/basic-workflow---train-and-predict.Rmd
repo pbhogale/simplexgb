@@ -30,21 +30,13 @@ We first illustrate the workflow with a regression problem, and then repeat the 
 2. **Preparing the training data :** xgboost requires the data to be in a particular format, for example, categorical variables need to be encoded as factors and then converted to a simple binary format via a process called [one hot encoding](https://en.wikipedia.org/wiki/One-hot). The `prepare_training_set` function takes in your data frame and the name of your target variable and does all the leg work for you, putting together a data structure that other functions from `simplexgb` can work with. 
 
 ```{r}
-library(nasaweather)
+library(mlbench)
 library(tidyverse)
-data(atmos)
-atmos %>% head()
-df <- atmos %>% 
-  mutate(season = case_when(
-    month %in% c(11,12,1,2) ~ 'winter',
-    month %in% c(3,4) ~ 'spring',
-    month %in% c(5,6,7,8) ~ 'summer',
-    month %in% c(9,10) ~ 'autumn'
-  )) %>% 
-  mutate(month = as.numeric(month)) %>% 
-  na.omit()
+data(BreastCancer)
+df <- BreastCancer %>% 
+  select(-Id)
 df %>% head()
-train_struct <- prepare_training_set(df = df, target_variable = 'temp')
+train_struct <- prepare_training_set(df = df, target_variable = 'Class')
 ```
 
 3. **Guess hyperparameters :** `simplexgb` takes some reasonable values of relevant hyperparameters depending on the size of your data set. You can tune these for better performance as you iterate. For now, we will simply take the default guesses that `simplexgb` generates for us. 
@@ -54,7 +46,7 @@ hyp <- guess_hyperparameters(train_structure = train_struct)
 hyp %>% print()
 ```
 
-`simplexgb` has spotted our problem to be a regression problem and chosen an appropriate objective function and evaluation metric. 
+`simplexgb` has spotted our problem to be a classification problem and chosen an appropriate objective function and evaluation metric. 
 
 4. **Evaluate performance :** For any dataset (that includes some work on feature engineering) and a set of hyperparameters, we should evaluate how well a model with those hyperparameters trained on that dataset will perform using cross validation. 
 
@@ -70,15 +62,15 @@ Just to illustrate the point, we added more estimators and obrained a marginal i
 5. **Train the model :** We keep aside a few observations to test our model with, and use the rest of our data to train a model.
 
 ```{r}
-smp_size <- floor(0.95 * nrow(df))
+smp_size <- floor(0.75 * nrow(df))
 set.seed(123)
 train_ind <- sample(seq_len(nrow(df)), size = smp_size)
 
 train_df <- df[train_ind, ]
 test_df <- df[-train_ind, ]
 
-train_struct <- prepare_training_set(train_df, target_variable = 'temp')
-hyp <- guess_hyperparameters(train_structure = train_struct, n_estimators = 100000, depth = 4)
+train_struct <- prepare_training_set(train_df, target_variable = 'Class')
+hyp <- guess_hyperparameters(train_structure = train_struct, n_estimators = 1000000, depth = 7)
 xgbmodel <- train_model(train_structure = train_struct, hyperparameters = hyp)
 ```
 
@@ -89,9 +81,7 @@ xgbmodel <- train_model(train_structure = train_struct, hyperparameters = hyp)
 pred_df <- get_predictions(xgbmodel, test_df = test_df)
 pred_df %>% head()
 test_df_preds <- test_df %>% 
-  mutate(preds = pred_df$temp)
-ggplot(test_df_preds, aes(x = temp, y = preds)) +
-  geom_point(alpha = 0.05) +
-  geom_abline(slope = 1, intercept = 0, alpha = 0.3)
+  mutate(preds = pred_df$category)
+table(test_df_preds$Class, test_df_preds$preds)
 ```
 

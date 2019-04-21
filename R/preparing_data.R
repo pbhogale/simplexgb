@@ -1,3 +1,12 @@
+#' this function helps compute the class of a given column
+#' and returns only one character value as a result.
+#' @param column of the data frame whose class we are interested in.
+get_class <- function(column){
+  return_class <- class(column) %>%
+    paste(collapse = '')
+  return(return_class)
+}
+
 #' this function returns the factors by which a df was normalized,
 #' so that the test dataset can be processed similarly
 #' @inheritParams normalize_df
@@ -6,23 +15,28 @@
 get_normalizing_factors <- function(df, target_variable=NA){
   colns <- colnames(df)
   coln_class <- df %>%
-    dplyr::summarise_all(class)
+    dplyr::summarise_all(get_class)
   selected_colns <- colns
-  for(i in 1:length(colns)){
-    if(coln_class[[colns[i]]][1]!="numeric"){
-      selected_colns <- selected_colns[selected_colns!=colns[i]]
+  if(length(colns)>0){
+    for(i in 1:length(colns)){
+      if(coln_class[[colns[i]]][1]!="numeric"){
+        selected_colns <- selected_colns[selected_colns!=colns[i]]
+      }
     }
   }
   if(!is.na(target_variable)){
     selected_colns <- selected_colns[selected_colns!=target_variable]
   }
   facs <- list()
-  for(i in 1:length(selected_colns)){
-    temp <- df[[selected_colns[i]]] - mean(df[[selected_colns[i]]], na.rm = T)
-    facs[[selected_colns[i]]] <- c(mean(df[[selected_colns[i]]], na.rm = T), sd(temp, na.rm = T))
+  if(length(selected_colns)>0){
+    for(i in 1:length(selected_colns)){
+      temp <- df[[selected_colns[i]]] - mean(df[[selected_colns[i]]], na.rm = T)
+      facs[[selected_colns[i]]] <- c(mean(df[[selected_colns[i]]], na.rm = T), sd(temp, na.rm = T))
+    }
+    facs_df <- facs %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
+  } else {
+    facs_df <- NA
   }
-
-  facs_df <- facs %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
   return(facs_df)
 }
 
@@ -36,15 +50,17 @@ get_normalizing_factors <- function(df, target_variable=NA){
 #' @return a data frame with numerical columns normalized
 #' @export
 normalize_df <- function(df, target_variable=NA, facs_df){
-  norm_colns <- colnames(facs_df)
-  for(i in 1:length(norm_colns)){
-    df[[norm_colns[i]]] <- (df[[norm_colns[i]]] - facs_df[[norm_colns[i]]][1])
-    df[[norm_colns[i]]] <- (df[[norm_colns[i]]] / facs_df[[norm_colns[i]]][2])
-  }
-  other_columns <- colnames(df)
-  for(i in 1:length(other_columns)){
-    if(!(other_columns[i] %in% norm_colns) & (other_columns[i] != target_variable)){
-      df[[other_columns[i]]] <- df[[other_columns[i]]] %>% as.factor()
+  if(!is.na(facs_df)){
+    norm_colns <- colnames(facs_df)
+    for(i in 1:length(norm_colns)){
+      df[[norm_colns[i]]] <- (df[[norm_colns[i]]] - facs_df[[norm_colns[i]]][1])
+      df[[norm_colns[i]]] <- (df[[norm_colns[i]]] / facs_df[[norm_colns[i]]][2])
+    }
+    other_columns <- colnames(df)
+    for(i in 1:length(other_columns)){
+      if(!(other_columns[i] %in% norm_colns) & (other_columns[i] != target_variable)){
+        df[[other_columns[i]]] <- df[[other_columns[i]]] %>% as.factor()
+      }
     }
   }
   return(df)
@@ -75,7 +91,7 @@ remove_uninformative <- function(df){
 get_train_levels <- function(df){
   colns <- colnames(df)
   coln_class <- df %>%
-    dplyr::summarise_all(class)
+    dplyr::summarise_all(get_class)
   max_levels <- 1
   levels_store <- list()
   for(i in 1:length(colns)){
@@ -102,8 +118,11 @@ get_train_levels <- function(df){
       levels_store[[colns[i]]] <- rnorm(length(levels_store[[colns[i]]]), 0, 1)
     }
   }
-
-  levels_df <- levels_store %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
+  if(length(levels_store)>0){
+    levels_df <- levels_store %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
+  } else{
+    levels_df <- NA
+  }
   return(levels_df)
 }
 
@@ -134,6 +153,22 @@ transform_target_variable <- function(df, target_variable){
   return(return_structure)
 }
 
+rationalize_categoricals <- function(df, target_variable = "y"){
+  colns <- colnames(df)
+  coln_class <- df %>%
+    dplyr::summarise_all(get_class)
+  for(i in 1:length(coln_class)){
+    if((colns[i]!=target_variable) & (coln_class[[colns[i]]][1]!="numeric")){
+      if(coln_class[[colns[i]]][1]=="orderedfactor"){
+        df[[colns[i]]] <- as.numeric(df[[colns[i]]])
+      } else {
+        temp_col <- as.character(df[[colns[i]]])
+        df[[colns[i]]] <- as.factor(temp_col)
+      }
+    }
+  }
+  return(df)
+}
 
 #' this function takes a data frame and the target variable and
 #' returns a data structure with everything needed to train and
@@ -142,8 +177,12 @@ transform_target_variable <- function(df, target_variable){
 #' @return list of data frames
 #' @export
 prepare_training_set <- function(df, target_variable = "y"){
+  df <- df %>%
+    na.omit()
+  df <- rationalize_categoricals(df, target_variable)
   train_facs <- get_normalizing_factors(df, target_variable)
   train_data <- normalize_df(df, target_variable, train_facs)
+
   target_reference <- transform_target_variable(df, target_variable)
   train_levels <- get_train_levels(df)
   train_levels[[target_variable]] <- NULL

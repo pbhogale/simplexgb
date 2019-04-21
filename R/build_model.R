@@ -140,6 +140,7 @@ get_predictions <- function (model_structure, test_df)
       levels[[level_cols[[i]]]] <- NULL
   }
   test_df[[model_structure[["target_variable"]]]] <- NULL
+  test_df <- rationalize_categoricals(test_df)
   norm_test_df <- normalize_df(test_df, facs_df = model_structure[["normalize_by"]],
                                target_variable = model_structure[["target_variable"]])
   norm_test_df <- rbind(levels_df,norm_test_df)
@@ -153,6 +154,10 @@ get_predictions <- function (model_structure, test_df)
     prob_matrix <- matrix(preds, nrow = nrow(norm_test_df),
                           byrow = T)
     predictions <- tibble::as_tibble(prob_matrix) %>% tail(nrow(test_df))
+    if(length(as.character(model_structure[["target_reference"]][[1]]))==2){
+      predictions <- predictions %>%
+        mutate(V2 = 1-V1)
+    }
     colnames(predictions) <- as.character(model_structure[["target_reference"]][[1]])
     cat_df <- predictions %>% tibble::rownames_to_column("row_id") %>%
       dplyr::mutate(row_id = as.numeric(row_id)) %>% tidyr::gather(category,
