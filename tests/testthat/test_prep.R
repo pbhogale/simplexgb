@@ -20,8 +20,9 @@ test_normalizing_factors <- function(){
 }
 
 test_const <- iris$Sepal.Length[1]
+test_df <- test_normalizing_factors()
 test_that("normalizing factors can be used to recreate original df", {
-  expect_equal(test_normalizing_factors()[["Sepal.Length"]][1], test_const)
+  expect_equal(test_df[["Sepal.Length"]][1], test_const)
   expect_equal(colnames(test_normalizing_factors()), colnames(iris))
 })
 

@@ -1,6 +1,7 @@
 #' this function helps compute the class of a given column
 #' and returns only one character value as a result.
 #' @param column of the data frame whose class we are interested in.
+#' @export
 get_class <- function(column){
   return_class <- class(column) %>%
     paste(collapse = '')
@@ -153,6 +154,12 @@ transform_target_variable <- function(df, target_variable){
   return(return_structure)
 }
 
+
+#' This function converts the categorical variables into either numeric (if ordered)
+#' or characters, if not.
+#' @inheritParams normalize_df
+#' @return list
+#' @export
 rationalize_categoricals <- function(df, target_variable = "y"){
   colns <- colnames(df)
   coln_class <- df %>%
@@ -160,7 +167,8 @@ rationalize_categoricals <- function(df, target_variable = "y"){
   for(i in 1:length(coln_class)){
     if((colns[i]!=target_variable) & (coln_class[[colns[i]]][1]!="numeric")){
       if(coln_class[[colns[i]]][1]=="orderedfactor"){
-        df[[colns[i]]] <- as.numeric(df[[colns[i]]])
+        temp_col <- as.character(df[[colns[i]]])
+        df[[colns[i]]] <- as.factor(temp_col)
       } else {
         temp_col <- as.character(df[[colns[i]]])
         df[[colns[i]]] <- as.factor(temp_col)

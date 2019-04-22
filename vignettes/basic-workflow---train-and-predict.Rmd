@@ -32,6 +32,7 @@ We first illustrate the workflow with a regression problem, and then repeat the 
 ```{r}
 library(mlbench)
 library(tidyverse)
+library(simplexgb)
 data(BreastCancer)
 df <- BreastCancer %>% 
   select(-Id)
@@ -53,7 +54,7 @@ hyp %>% print()
 ```{r}
 cv_results <- cross_validate(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
 print(cv_results$metric)
-hyp_more <- guess_hyperparameters(train_structure = train_struct, n_estimators = 50000)
+hyp_more <- guess_hyperparameters(train_structure = train_struct, n_estimators = 100000)
 cv_results_more <- cross_validate(train_structure = train_struct, hyperparameters = hyp_more, nfold = 5)
 print(cv_results_more$metric)
 ```
