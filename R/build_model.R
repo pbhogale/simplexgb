@@ -52,6 +52,7 @@ guess_hyperparameters <- function(train_structure,
 #' @param nfold number of folds of CV
 #' @export
 cross_validate <- function(train_structure, hyperparameters, nfold = 5){
+  # print("defining the xgb parameters")
   xgb_params <- list("objective" = hyperparameters[["objective_function"]],
                      "eval_metric" = hyperparameters[["eval_metric"]],
                      "eta" = hyperparameters[["learning_rate"]],
@@ -60,10 +61,14 @@ cross_validate <- function(train_structure, hyperparameters, nfold = 5){
   if("num_class" %in% names(hyperparameters)){
     xgb_params[["num_class"]] <- hyperparameters[["num_class"]]
   }
+  # print("building the sparse model matrix")
   features <-Matrix::sparse.model.matrix(as.formula(paste(train_structure$target_variable, "~ .")),
                                   data = train_structure$data)[,-1]
+  # print("identifying the labels")
   lab <- train_structure$data[[train_structure$target_variable]]
+  # print("building the xgb DMatrix for training")
   dtrain <- xgboost::xgb.DMatrix(data = features, label = lab)
+  # print("running the cross validation")
   cv_model <- xgboost::xgb.cv(params = xgb_params,
                               data = dtrain,
                               verbose = F,
@@ -72,6 +77,7 @@ cross_validate <- function(train_structure, hyperparameters, nfold = 5){
                               prediction = T)
   ret_struct <- list()
   ret_struct[["cv_model"]] <- cv_model
+  # print("computing useful metrics")
   if("num_class" %in% names(hyperparameters)){
     OOF_prediction <- tibble::tibble(cv_model$pred) %>%
       dplyr::mutate(max_prob = max.col(., ties.method = "last")) %>%

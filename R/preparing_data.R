@@ -137,7 +137,7 @@ transform_target_variable <- function(df, target_variable){
   return_structure <-  list()
   return_df <- list()
   if(class(df[[target_variable]]) != "numeric"){
-    return_df[[target_variable]] <- as.integer(df[[target_variable]])-1
+    return_df[[target_variable]] <- as.integer(as.integer(as.factor(df[[target_variable]]))-1)
     return_df[[paste("original",target_variable,sep = "_")]] <- df[[target_variable]]
     return_df <- tibble::as_tibble(return_df)
     reference_df <- return_df %>%
@@ -185,12 +185,14 @@ rationalize_categoricals <- function(df, target_variable = "y"){
 #' @return list of data frames
 #' @export
 prepare_training_set <- function(df, target_variable = "y"){
+  # print("removing NA")
   df <- df %>%
     na.omit()
+  # print("aligning all factor variables")
   df <- rationalize_categoricals(df, target_variable)
+  # print("normalising all numerical variables")
   train_facs <- get_normalizing_factors(df, target_variable)
   train_data <- normalize_df(df, target_variable, train_facs)
-
   target_reference <- transform_target_variable(df, target_variable)
   train_levels <- get_train_levels(df)
   train_levels[[target_variable]] <- NULL
