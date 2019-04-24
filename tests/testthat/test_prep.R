@@ -1,7 +1,8 @@
+context("test_prep.R")
 data(iris)
 test_normalize_df <- function(){
-  test_df <- normalize_df(iris, "Species", facs_df = get_normalizing_factors(iris))
-  return(mean(test_df$Sepal.Length))
+  test_df <- simplexgb::normalize_df(iris, "Species", facs_df = simplexgb::get_normalizing_factors(iris))
+  return(mean(test_df[["Sepal.Length"]]))
 }
 
 test_that("normalizing gives means close to 0", {
@@ -20,8 +21,9 @@ test_normalizing_factors <- function(){
 }
 
 test_const <- iris$Sepal.Length[1]
+test_df <- test_normalizing_factors()
 test_that("normalizing factors can be used to recreate original df", {
-  expect_equal(test_normalizing_factors()[["Sepal.Length"]][1], test_const)
+  expect_equal(test_df[["Sepal.Length"]][1], test_const)
   expect_equal(colnames(test_normalizing_factors()), colnames(iris))
 })
 
