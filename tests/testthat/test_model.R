@@ -22,6 +22,12 @@ test_that("the cv function works as intended", {
 })
 
 test_that("the predictions from the model are alright", {
-  expect_equal(get_predictions(tmo_r, iris[1:1,])[["Sepal.Length"]][1], 5.16, tolerance = 0.1)
+  expect_gt(get_predictions(tmo_r, iris[1:1,])[["Sepal.Length"]][1], 2.0)
   expect_match(get_predictions(train_model(tdf_c, hyp_c), iris[1:1,])[["category"]][1], "setosa")
+})
+
+iris_mod <- iris
+iris_mod[["Species"]][1] <- "hellohello"
+test_that("a test set with new levels is handled properly",{
+  expect_gt(get_predictions(model_structure = tmo_r, test_df = iris_mod)[["Sepal.Length"]][1], 2.0)
 })
