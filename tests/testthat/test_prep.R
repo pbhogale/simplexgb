@@ -47,3 +47,14 @@ test_that("the prepared training data can be used",{
   expect_equal(prepare_training_set(iris, "Species")$data[["Sepal.Length"]][1],-0.89767388, tolerance=1e-3)
   expect_equal(prepare_training_set(iris, "Species")$normalize_by[["Sepal.Length"]][1],5.8433, tolerance=1e-3)
 })
+
+iris_mod <- iris
+iris_mod[["Sepal.Length"]][c(1,2,3,4)] <- NA
+iris_mod$Species <- as.character(iris_mod$Species)
+iris_mod[["Species"]][c(1,2,3,4)] <- NA
+iris_mod$Species <- as.factor(iris_mod$Species)
+iris_mod_handle <- handle_missing_values(iris_mod, train_facs = get_normalizing_factors(iris))
+test_that("the NA handling works", {
+  expect_match(as.character(iris_mod_handle$Species[1]), "not available")
+  expect_false(is.na(iris_mod_handle$Sepal.Length[1]))
+})

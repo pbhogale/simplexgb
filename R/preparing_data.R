@@ -178,6 +178,32 @@ rationalize_categoricals <- function(df, target_variable = "y"){
   return(df)
 }
 
+
+#' tThis function implements a simple NA handling system for
+#' categorical and numeric variables.
+#' @inheritParams normalize_df
+#' @return list of data frames
+#' @export
+handle_missing_values <- function(df, target_variable = "y", train_facs){
+  df <- df %>%
+    dplyr::filter(!is.na(target_variable))
+  colns <- colnames(df)
+  coln_class <- df %>%
+    dplyr::summarise_all(get_class)
+  for(i in 1:length(coln_class)){
+    if((colns[i]!=target_variable) & (coln_class[[colns[i]]][1]!="numeric") & (sum(is.na(df[[colns[i]]]))>0)){
+      df[[colns[i]]] <- as.character(df[[colns[i]]])
+      df[[colns[i]]][is.na(df[[colns[i]]])] <- "not_available"
+      df[[colns[i]]] <- as.factor(df[[colns[i]]])
+    } else {
+      if(sum(is.na(df[[colns[i]]]))>0){
+        df[[colns[i]]][is.na(df[[colns[i]]])] <- rnorm(sum(is.na(df[[colns[i]]])), train_facs[[colns[i]]][1], train_facs[[colns[i]]][2])
+        }
+      }
+  }
+  return(df)
+}
+
 #' this function takes a data frame and the target variable and
 #' returns a data structure with everything needed to train and
 #' predict with the model.
@@ -185,16 +211,14 @@ rationalize_categoricals <- function(df, target_variable = "y"){
 #' @return list of data frames
 #' @export
 prepare_training_set <- function(df, target_variable = "y"){
-  # print("removing NA")
-  df <- df %>%
-    na.omit()
   # print("aligning all factor variables")
   df <- rationalize_categoricals(df, target_variable)
   # print("normalising all numerical variables")
   train_facs <- get_normalizing_factors(df, target_variable)
   train_data <- normalize_df(df, target_variable, train_facs)
-  target_reference <- transform_target_variable(df, target_variable)
-  train_levels <- get_train_levels(df)
+  train_data <- handle_missing_values(train_data, target_variable = target_variable, train_facs = train_facs)
+  target_reference <- transform_target_variable(train_data, target_variable)
+  train_levels <- get_train_levels(train_data)
   train_levels[[target_variable]] <- NULL
   train_structure <- list()
   if(class(df[[target_variable]]) != "numeric"){

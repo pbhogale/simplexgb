@@ -1,0 +1,91 @@
+---
+title: "Vignette Title"
+author: "Vignette Author"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(tidyverse)
+library(simplexgb)
+library(janitor)
+```
+
+This vignette will use data from the [house prices kaggle contest](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/overview). This vignette will focus on thge simplest possible data cleaning and rely on the sensible defaults in `simplexgb` to construct a submission and evaluate the results on kaggle. For a more comprehensive data exploration of this data set check [this kernel](https://www.kaggle.com/erikbruin/house-prices-lasso-xgboost-and-a-detailed-eda)
+
+**Get the data**
+
+If you have the kaggle api, use `kaggle competitions download -c house-prices-advanced-regression-techniques` to obtain the data. See [this blog](https://adityashrm21.github.io/Setting-Up-Kaggle/) to see how to setup the kaggle api, if you want to.
+
+```{r}
+train <- read_csv("../data/kaggle-house-prices/train.csv") %>% select(-Id) %>% clean_names()
+test <- read_csv("../data/kaggle-house-prices/test.csv") %>% clean_names()
+test_id <- test$id
+test <- test %>% select(-id)
+sample_sub <- read_csv("../data/kaggle-house-prices/sample_submission.csv")
+sample_sub %>% head()
+```
+
+#### Dealing with missing values
+
+This data set has a lot of missing values. If we removed all rows which had a missing value of them, we would lost a significant amount of data. If the user does not want to deal with missing values (see the detailed analysis done for this data set [here](https://www.kaggle.com/erikbruin/house-prices-lasso-xgboost-and-a-detailed-eda)) `simplexgb` use a simple heuristic for dealing with missing values. For character variables, it use "not available" as a new level, while for numeric variables it generates random numbers from a normalized distribution of the available values of that variable. Clearly, there are better ways to impute missing values that include dependencies and correlations.. but this will suffice for now.
+
+#### Preparing the training structure
+
+```{r}
+train$sale_price <- 1/sqrt(train$sale_price)
+train_struct <- prepare_training_set(df = train, target_variable = "sale_price")
+```
+
+
+#### Cross validation
+
+**Guessing the hyperparameters**
+
+```{r}
+hyp <- guess_hyperparameters(train_structure = train_struct)
+hyp %>% print()
+```
+
+**Cross validation**
+
+```{r}
+cv_results <- cross_validate(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
+print(cv_results$metric)
+```
+
+It is not really clear what that means, but let us see how we perform if we make a submission.
+
+**Training a model**
+
+```{r}
+hyp <- guess_hyperparameters(train_structure = train_struct, depth = 15, n_estimators = 2e5)
+print(hyp)
+xgbmodel <- train_model(train_structure = train_struct, hyperparameters = hyp)
+```
+
+**Predicting on the test set**
+
+```{r}
+pred_df <- get_predictions(xgbmodel, test_df = test)
+pred_df %>% head()
+```
+
+**Constructing the submission**
+
+```{r}
+submission <- sample_sub
+submission$Id <- test_id
+submission$SalePrice <- 1/((pred_df$sale_price)^2)
+submission %>% write_csv("../data/kaggle-house-prices/submission_basic.csv")
+```
+
+We see that while `simplexgb` will get you from start to submission in no time at all, there is no short cut to understanding the data and careful cleaning and feature engineering. See [this kernel](https://www.kaggle.com/raimohaikari/house-prices-pls) for another example. 
