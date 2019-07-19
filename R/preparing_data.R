@@ -42,7 +42,7 @@ get_normalizing_factors <- function(df, target_variable=NA){
 }
 
 
-#' This function normalizes the n umeric columns in a data frame by
+#' This function normalizes the numeric columns in a data frame by
 #' subtracting the mean and dividing by the standard deviation
 #' given by the df from get_normalizing_factors
 #' @param df a data frame
@@ -187,20 +187,8 @@ rationalize_categoricals <- function(df, target_variable = "y"){
 handle_missing_values <- function(df, target_variable = "y", train_facs){
   df <- df %>%
     dplyr::filter(!is.na(target_variable))
-  colns <- colnames(df)
-  coln_class <- df %>%
-    dplyr::summarise_all(get_class)
-  for(i in 1:length(coln_class)){
-    if((colns[i]!=target_variable) & (coln_class[[colns[i]]][1]!="numeric") & (sum(is.na(df[[colns[i]]]))>0)){
-      df[[colns[i]]] <- as.character(df[[colns[i]]])
-      df[[colns[i]]][is.na(df[[colns[i]]])] <- "not_available"
-      df[[colns[i]]] <- as.factor(df[[colns[i]]])
-    } else {
-      if(sum(is.na(df[[colns[i]]]))>0){
-        df[[colns[i]]][is.na(df[[colns[i]]])] <- rnorm(sum(is.na(df[[colns[i]]])), train_facs[[colns[i]]][1], train_facs[[colns[i]]][2])
-        }
-      }
-  }
+  tempData <- mice::mice(df,m=1,maxit=100,meth='pmm',seed=500)
+  df <- mice::complete(tempData, 1)
   return(df)
 }
 
