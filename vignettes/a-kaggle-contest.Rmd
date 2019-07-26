@@ -26,11 +26,11 @@ This vignette will use data from the [house prices kaggle contest](https://www.k
 If you have the kaggle api, use `kaggle competitions download -c house-prices-advanced-regression-techniques` to obtain the data. See [this blog](https://adityashrm21.github.io/Setting-Up-Kaggle/) to see how to setup the kaggle api, if you want to.
 
 ```{r}
-train <- read_csv("../kaggle-house-prices/train.csv") %>% select(-Id) %>% clean_names()
-test <- read_csv("../kaggle-house-prices/test.csv") %>% clean_names()
+train <- read_csv("../data/kaggle-house-prices/train.csv") %>% select(-Id) %>% clean_names()
+test <- read_csv("../data/kaggle-house-prices/test.csv") %>% clean_names()
 test_id <- test$id
 test <- test %>% select(-id)
-sample_sub <- read_csv("../kaggle-house-prices/sample_submission.csv")
+sample_sub <- read_csv("../data/kaggle-house-prices/sample_submission.csv")
 sample_sub %>% head()
 ```
 
@@ -41,7 +41,49 @@ This data set has a lot of missing values. If we removed all rows which had a mi
 #### Preparing the training structure
 
 ```{r}
-train$sale_price <- 1/sqrt(train$sale_price)
+# pools
+train$pool_qc[is.na(train$pool_qc)] <- 'None'
+test$pool_qc[is.na(test$pool_qc)] <- 'None'
+Qualities <- c('None' = 0, 'Po' = 1, 'Fa' = 2, 'TA' = 3, 'Gd' = 4, 'Ex' = 5)
+train$pool_qc<-as.integer(plyr::revalue(train$pool_qc, Qualities))
+test$pool_qc<-as.integer(plyr::revalue(test$pool_qc, Qualities))
+
+#misc feature
+train$misc_feature[is.na(train$misc_feature)] <- 'None'
+test$misc_feature <- as.factor(test$misc_feature)
+
+#alley
+train$alley[is.na(train$alley)] <- 'None'
+train$alley <- as.factor(train$alley)
+
+#fence
+train$fence[is.na(train$fence)] <- 'None'
+test$fence[is.na(test$fence)] <- 'None'
+
+#fireplace
+train$fireplace_qu[is.na(train$fireplace_qu)] <- 'None'
+train$fireplace_qu<-as.integer(plyr::revalue(train$fireplace_qu, Qualities))
+test$fireplace_qu[is.na(test$fireplace_qu)] <- 'None'
+test$fireplace_qu<-as.integer(plyr::revalue(test$fireplace_qu, Qualities))
+
+#bathrooms
+train$tot_bathrooms <- train$full_bath + (train$half_bath*0.5) + train$bsmt_full_bath + (train$bsmt_half_bath*0.5)
+test$tot_bathrooms <- test$full_bath + (test$half_bath*0.5) + test$bsmt_full_bath + (test$bsmt_half_bath*0.5)
+
+#age and remodelling
+train$remod <- ifelse(train$year_built==train$year_remod_add, 0, 1)
+test$remod <- ifelse(test$year_built==test$year_remod_add, 0, 1)
+train$age <- as.numeric(train$yr_sold)-train$year_remod_add
+test$age <- as.numeric(test$yr_sold)-test$year_remod_add
+
+#is new
+train$is_new <- ifelse(train$yr_sold==train$year_built, 1, 0)
+test$is_new <- ifelse(test$yr_sold==test$year_built, 1, 0)
+
+#total area
+train$total_sq_feet <- train$gr_liv_area + train$total_bsmt_sf
+test$total_sq_feet <- test$gr_liv_area + test$total_bsmt_sf
+
 train_struct <- prepare_training_set(df = train, target_variable = "sale_price")
 ```
 
@@ -58,7 +100,7 @@ hyp %>% print()
 **Cross validation**
 
 ```{r}
-cv_results <- cross_validate(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
+cv_results <- cross_validate(train_structure = train_struct, hyperparameters = hyp, nfold = 3)
 print(cv_results$metric)
 ```
 
@@ -67,16 +109,26 @@ It is not really clear what that means, but let us see how we perform if we make
 **Training a model**
 
 ```{r}
-hyp <- guess_hyperparameters(train_structure = train_struct, depth = 30, n_estimators = 2e6)
-print(hyp)
-xgbmodel <- train_model(train_structure = train_struct, hyperparameters = hyp)
+hyp0 <- guess_hyperparameters(train_structure = train_struct)
+xgbmodel0 <- train_model(train_structure = train_struct, hyperparameters = hyp0)
+hyp1 <- guess_hyperparameters(train_structure = train_struct, depth = 10, n_estimators = 3000)
+xgbmodel1 <- train_model(train_structure = train_struct, hyperparameters = hyp1)
+hyp2 <- guess_hyperparameters(train_structure = train_struct, depth = 15, n_estimators = 5000)
+xgbmodel2 <- train_model(train_structure = train_struct, hyperparameters = hyp2)
+hyp3 <- guess_hyperparameters(train_structure = train_struct, depth = 30, n_estimators = 10000)
+xgbmodel3 <- train_model(train_structure = train_struct, hyperparameters = hyp2)
 ```
 
 **Predicting on the test set**
 
 ```{r}
-pred_df <- get_predictions(xgbmodel, test_df = test)
-pred_df %>% head()
+pred_df0 <- get_predictions(xgbmodel0, test_df = test)
+pred_df1 <- get_predictions(xgbmodel1, test_df = test)
+pred_df2 <- get_predictions(xgbmodel2, test_df = test)
+pred_df3 <- get_predictions(xgbmodel3, test_df = test)
+
+avg_preds <- (pred_df0$sale_price + pred_df1$sale_price + pred_df2$sale_price + pred_df3$sale_price)/4
+pred_df <- tibble('sale_price' = avg_preds)
 ```
 
 **Constructing the submission**
@@ -84,8 +136,7 @@ pred_df %>% head()
 ```{r}
 submission <- sample_sub
 submission$Id <- test_id
-submission$SalePrice <- 1/((pred_df$sale_price)^2)
-submission %>% write_csv("../../kaggle-house-prices/submission_basic.csv")
+submission %>% write_csv("../data/kaggle-house-prices/submission_basic.csv")
 ```
 
 We see that while `simplexgb` will get you from start to submission in no time at all, there is no short cut to understanding the data and careful cleaning and feature engineering. See [this kernel](https://www.kaggle.com/raimohaikari/house-prices-pls) for another example. 

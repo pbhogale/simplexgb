@@ -29,12 +29,15 @@ get_normalizing_factors <- function(df, target_variable=NA){
     selected_colns <- selected_colns[selected_colns!=target_variable]
   }
   facs <- list()
-  if(length(selected_colns)>0){
-    for(i in 1:length(selected_colns)){
+  if (length(selected_colns) > 0){
+    for (i in 1:length(selected_colns)){
       temp <- df[[selected_colns[i]]] - mean(df[[selected_colns[i]]], na.rm = T)
-      facs[[selected_colns[i]]] <- c(mean(df[[selected_colns[i]]], na.rm = T), sd(temp, na.rm = T))
+      facs[[selected_colns[i]]] <- c(mean(df[[selected_colns[i]]], na.rm = T),
+        sd(temp, na.rm = T))
     }
-    facs_df <- facs %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
+    facs_df <- facs %>% dplyr::as_tibble() %>%
+      tibble::rownames_to_column() %>%
+      dplyr::select(-rowname)
   } else {
     facs_df <- NA
   }
@@ -51,15 +54,16 @@ get_normalizing_factors <- function(df, target_variable=NA){
 #' @return a data frame with numerical columns normalized
 #' @export
 normalize_df <- function(df, target_variable=NA, facs_df){
-  if(!is.na(facs_df)){
+  if (!is.na(facs_df)){
     norm_colns <- colnames(facs_df)
-    for(i in 1:length(norm_colns)){
+    for (i in 1:length(norm_colns)){
       df[[norm_colns[i]]] <- (df[[norm_colns[i]]] - facs_df[[norm_colns[i]]][1])
       df[[norm_colns[i]]] <- (df[[norm_colns[i]]] / facs_df[[norm_colns[i]]][2])
     }
     other_columns <- colnames(df)
-    for(i in 1:length(other_columns)){
-      if(!(other_columns[i] %in% norm_colns) & (other_columns[i] != target_variable)){
+    for (i in 1:length(other_columns)){
+      if (!(other_columns[i] %in% norm_colns) & 
+      (other_columns[i] != target_variable)){
         df[[other_columns[i]]] <- df[[other_columns[i]]] %>% as.factor()
       }
     }
@@ -74,8 +78,8 @@ normalize_df <- function(df, target_variable=NA, facs_df){
 #' @return data frame with uninformative columns removed
 remove_uninformative <- function(df){
   colns <- colnames(df)
-  for(i in 1:length(colns)){
-    if(length(unique(df[[colns[i]]]))<2){
+  for (i in 1:length(colns)){
+    if (length(unique(df[[colns[i]]])) < 2){
       df[[colns[i]]] <- NULL
     }
   }
@@ -95,10 +99,12 @@ get_train_levels <- function(df){
     dplyr::summarise_all(get_class)
   max_levels <- 1
   levels_store <- list()
-  for(i in 1:length(colns)){
-    if(coln_class[[colns[i]]][1]!="numeric"){
-      levels_store[[colns[i]]] <- df[[colns[i]]] %>% as.factor() %>% forcats::fct_unique()
-      if(length(levels_store[[colns[i]]])>max_levels){
+  for (i in 1:length(colns)){
+    if (coln_class[[colns[i]]][1] != "numeric"){
+      levels_store[[colns[i]]] <- df[[colns[i]]] %>%
+        as.factor() %>%
+        forcats::fct_unique()
+      if (length(levels_store[[colns[i]]]) > max_levels){
         max_levels <- length(levels_store[[colns[i]]])
       }
     }
@@ -111,16 +117,20 @@ get_train_levels <- function(df){
     if(coln_class[[colns[i]]][1]!="numeric"){
       levels_store[[colns[i]]] <- as.character(levels_store[[colns[i]]])
     }
-    levels_store[[colns[i]]] <- c(levels_store[[colns[i]]], rep(levels_store[[colns[i]]][1],max_levels - length(levels_store[[colns[i]]])))
-    if(coln_class[[colns[i]]][1]!="numeric"){
+    levels_store[[colns[i]]] <- c(levels_store[[colns[i]]], 
+      rep(levels_store[[colns[i]]][1],
+      max_levels - length(levels_store[[colns[i]]])))
+    if(coln_class[[colns[i]]][1] != "numeric"){
       levels_store[[colns[i]]] <- as.factor(levels_store[[colns[i]]])
     }
-    if(coln_class[[colns[i]]][1]=="numeric"){
+    if(coln_class[[colns[i]]][1] == "numeric"){
       levels_store[[colns[i]]] <- rnorm(length(levels_store[[colns[i]]]), 0, 1)
     }
   }
   if(length(levels_store)>0){
-    levels_df <- levels_store %>% dplyr::as_tibble() %>% tibble::rownames_to_column() %>% dplyr::select(-rowname)
+    levels_df <- levels_store %>% dplyr::as_tibble() %>%
+      tibble::rownames_to_column() %>%
+      dplyr::select(-rowname)
   } else{
     levels_df <- NA
   }
@@ -136,7 +146,7 @@ get_train_levels <- function(df){
 transform_target_variable <- function(df, target_variable){
   return_structure <-  list()
   return_df <- list()
-  if(class(df[[target_variable]]) != "numeric"){
+  if (class(df[[target_variable]]) != "numeric"){
     return_df[[target_variable]] <- as.integer(as.integer(as.factor(df[[target_variable]]))-1)
     return_df[[paste("original",target_variable,sep = "_")]] <- df[[target_variable]]
     return_df <- tibble::as_tibble(return_df)
@@ -187,8 +197,8 @@ rationalize_categoricals <- function(df, target_variable = "y"){
 handle_missing_values <- function(df, target_variable = "y", train_facs){
   df <- df %>%
     dplyr::filter(!is.na(target_variable))
-  tempData <- mice::mice(df,m=1,maxit=100,meth='pmm',seed=500)
-  df <- mice::complete(tempData, 1)
+  tempdata <- mice::mice(df, maxit = 3, meth = "rf", seed = 500, m = 1)
+  df <- mice::complete(tempdata)
   return(df)
 }
 
