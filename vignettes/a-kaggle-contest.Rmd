@@ -109,13 +109,13 @@ It is not really clear what that means, but let us see how we perform if we make
 **Training a model**
 
 ```{r}
-hyp0 <- guess_hyperparameters(train_structure = train_struct)
+hyp0 <- guess_hyperparameters(train_structure = train_struct, eval_metric = "rmse")
 xgbmodel0 <- train_model(train_structure = train_struct, hyperparameters = hyp0)
-hyp1 <- guess_hyperparameters(train_structure = train_struct, depth = 10, n_estimators = 3000)
+hyp1 <- guess_hyperparameters(train_structure = train_struct, depth = 10, n_estimators = 3000, eval_metric = "rmse")
 xgbmodel1 <- train_model(train_structure = train_struct, hyperparameters = hyp1)
-hyp2 <- guess_hyperparameters(train_structure = train_struct, depth = 15, n_estimators = 5000)
+hyp2 <- guess_hyperparameters(train_structure = train_struct, depth = 15, n_estimators = 5000, eval_metric = "rmse")
 xgbmodel2 <- train_model(train_structure = train_struct, hyperparameters = hyp2)
-hyp3 <- guess_hyperparameters(train_structure = train_struct, depth = 30, n_estimators = 10000)
+hyp3 <- guess_hyperparameters(train_structure = train_struct, depth = 30, n_estimators = 10000, eval_metric = "rmse")
 xgbmodel3 <- train_model(train_structure = train_struct, hyperparameters = hyp2)
 ```
 
@@ -140,3 +140,7 @@ submission %>% write_csv("../data/kaggle-house-prices/submission_basic.csv")
 ```
 
 We see that while `simplexgb` will get you from start to submission in no time at all, there is no short cut to understanding the data and careful cleaning and feature engineering. See [this kernel](https://www.kaggle.com/raimohaikari/house-prices-pls) for another example. 
+
+
+
+
