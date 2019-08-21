@@ -55,6 +55,6 @@ iris_mod[["Species"]][c(1,2,3,4)] <- NA
 iris_mod$Species <- as.factor(iris_mod$Species)
 iris_mod_handle <- handle_missing_values(iris_mod, train_facs = get_normalizing_factors(iris))
 test_that("the NA handling works", {
-  expect_match(as.character(iris_mod_handle$Species[1]), "not available")
+  expect_match(as.character(iris_mod_handle$Species[1]), "not_available")
   expect_false(is.na(iris_mod_handle$Sepal.Length[1]))
 })
