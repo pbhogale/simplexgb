@@ -19,7 +19,11 @@ Imports:
     e1071,
     forcats,
     tibble,
-    Matrix
+    Matrix,
+    lme4,
+    nnet,
+    glmnet,
+    janitor,
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,

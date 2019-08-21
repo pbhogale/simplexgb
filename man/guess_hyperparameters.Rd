@@ -20,6 +20,10 @@ guess_hyperparameters(train_structure, n_estimators = 1000,
 \item{depth}{minimum depth of trees}
 
 \item{nrounds}{the number of rounds of training}
+
+\item{objective_function}{the objective function to be used}
+
+\item{eval_metric}{the evaluation metric}
 }
 \description{
 Objective functions and eval metrics are always taken

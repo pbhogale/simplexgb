@@ -4,7 +4,7 @@ author: "Prasanna Bhogale"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{simplexgb workflow : wisconsin breast cancer dataset}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -12,7 +12,8 @@ vignette: >
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  warning = FALSE
 )
 ```
 
@@ -30,7 +31,9 @@ We first illustrate the workflow with a regression problem, and then repeat the 
 2. **Preparing the training data :** xgboost requires the data to be in a particular format, for example, categorical variables need to be encoded as factors and then converted to a simple binary format via a process called [one hot encoding](https://en.wikipedia.org/wiki/One-hot). The `prepare_training_set` function takes in your data frame and the name of your target variable and does all the leg work for you, putting together a data structure that other functions from `simplexgb` can work with. 
 
 ```{r}
-library(tidyverse)
+library(magrittr)
+library(dplyr)
+library(janitor)
 library(simplexgb)
 data(wisccancerdata)
 train_struct <- prepare_training_set(df = wisc_cancer_data, target_variable = 'diagnosis')
@@ -48,7 +51,7 @@ hyp %>% print()
 4. **Evaluate performance :** For any dataset (that includes some work on feature engineering) and a set of hyperparameters, we should evaluate how well a model with those hyperparameters trained on that dataset will perform using cross validation. 
 
 ```{r}
-cv_results <- cross_validate(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
+cv_results <- cross_validate_xgb(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
 print(cv_results$metric)
 print(cv_results$confusion_matrix)
 ```
@@ -66,14 +69,14 @@ test_df <- wisc_cancer_data[-train_ind, ]
 
 train_struct <- prepare_training_set(train_df, target_variable = 'diagnosis')
 hyp <- guess_hyperparameters(train_structure = train_struct)
-xgbmodel <- train_model(train_structure = train_struct, hyperparameters = hyp)
+xgbmodel <- train_model_xgb(train_structure = train_struct, hyperparameters = hyp)
 ```
 
 
 6. **Predict on the test set :** Nothing could be simpler. 
 
 ```{r}
-pred_df <- get_predictions(xgbmodel, test_df = test_df)
+pred_df <- get_predictions_xgb(xgbmodel, test_df = test_df)
 pred_df %>% head()
 test_df_preds <- test_df %>% 
   mutate(preds = pred_df$category)
@@ -81,3 +84,21 @@ table(test_df_preds$diagnosis, test_df_preds$preds)
 ```
 
 We see for this data set, we obtain excellent performance just with the standard guesses for the hyperparameters. See [this kaggle kernel](https://www.kaggle.com/gargmanish/basic-machine-learning-with-cancer) for some numbers to compare with, on standard ML algorithms from sklearn. 
+
+## Linear models
+
+we use the `glmnet` package for linear models for multinomial, binomial and linear regression with gaussian errors. Other families are yet to be implemented (poisson, cox etc).
+
+```{r}
+model_struct <- train_linear_model(train_struct, xgbmodel, hyp)
+plot(model_struct[["models"]][["linear_model"]])
+```
+
+ˆ
+```{r}
+pred_df_linear <- get_predictions_linear(model_struct, test_df = test_df)
+pred_df_linear %>% head()
+test_df_preds <- test_df %>% 
+  mutate(preds = pred_df_linear$category)
+table(test_df_preds$diagnosis, test_df_preds$preds)
+```
