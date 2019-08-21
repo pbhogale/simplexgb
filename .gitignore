@@ -7,3 +7,4 @@ inst/doc
 *.txt
 packrat/lib*/
 packrat/src/
+.DS_Store

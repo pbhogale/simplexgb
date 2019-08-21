@@ -102,3 +102,14 @@ test_df_preds <- test_df %>%
   mutate(preds = pred_df_linear$category)
 table(test_df_preds$diagnosis, test_df_preds$preds)
 ```
+
+## RF model
+
+```{r}
+model_struct <- train_rf_model(train_structure = train_struct, model_structure = model_struct, hyperparameters = hyp)
+preds_rf <- get_predictions_rf(model_structure = model_struct, test_df = test_df)
+test_df_preds <- test_df %>% 
+  mutate(preds = preds_rf$category)
+table(test_df_preds$diagnosis, test_df_preds$preds)
+```
+

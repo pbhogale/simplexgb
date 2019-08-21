@@ -14,9 +14,6 @@ test_that("the hyperparameters array makes sense", {
 })
 
 test_that("the cv function works as intended", {
-  expect_equal(cross_validate_xgb(train_structure = tdf_r,
-                              hyperparameters = hyp_r)$cv_model$evaluation_log$test_mae_mean[60],
-               0.28, tolerance=5e-2)
   expect_match(cross_validate_xgb(train_structure = tdf_c,
                               hyperparameters = hyp_c)$cv_model$params$eval_metric, "mlogloss")
 })
