@@ -6,8 +6,8 @@
 xgb model. If the user has supplied parameters, the function
 chooses the ones least likely to lead to overfitting.}
 \usage{
-guess_hyperparameters(train_structure, n_estimators = 1000,
-  learning_rate = 0.1, depth = 2, nrounds = 20,
+guess_hyperparameters(train_structure, n_estimators = 10,
+  learning_rate = 0.05, depth = 2, nrounds = 100,
   objective_function = NA, eval_metric = NA)
 }
 \arguments{

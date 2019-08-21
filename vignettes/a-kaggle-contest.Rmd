@@ -66,7 +66,7 @@ It is not really clear what that means, but let us see how we perform if we make
 **Training a model**
 
 ```{r}
-hyp <- guess_hyperparameters(train_structure = train_struct, depth = 15, n_estimators = 2e5)
+hyp <- guess_hyperparameters(train_structure = train_struct)
 print(hyp)
 xgbmodel <- train_model_xgb(train_structure = train_struct, hyperparameters = hyp)
 ```
@@ -100,13 +100,25 @@ submission$Id <- test_id
 submission %>% write_csv("kaggle-house-prices/submission_linear.csv")
 ```
 
+## RF model
+
+```{r}
+model_struct <- train_rf_model(train_structure = train_struct, model_structure = model_struct, hyperparameters = hyp)
+pred_rf <- get_predictions_rf(model_structure = model_struct, test_df = test)
+pred_rf %>% head()
+submission <- sample_sub
+submission$Id <- test_id
+submission %>% write_csv("kaggle-house-prices/submission_rf.csv")
+```
+
+
 Avg of these
 
 ```{r}
 lin_pred <- read_csv("kaggle-house-prices/submission_linear.csv")
 xgb_pred <- read_csv("kaggle-house-prices/submission_basic.csv")
-
-pred <- tibble(Id = lin_pred$Id, SalePrice = sqrt(abs(lin_pred$SalePrice)*abs(xgb_pred$SalePrice)))
+rf_pred <- read_csv("kaggle-house-prices/submission_rf.csv")
+pred <- tibble(Id = lin_pred$Id, SalePrice = (abs(lin_pred$SalePrice) + abs(xgb_pred$SalePrice) + abs(rf_pred$SalePrice)))
 pred %>% write_csv("kaggle-house-prices/submission_average.csv")
 ```
 
