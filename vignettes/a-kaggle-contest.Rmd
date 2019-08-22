@@ -25,11 +25,43 @@ This vignette will use data from the [house prices kaggle contest](https://www.k
 
 If you have the kaggle api, use `kaggle competitions download -c house-prices-advanced-regression-techniques` to obtain the data. See [this blog](https://adityashrm21.github.io/Setting-Up-Kaggle/) to see how to setup the kaggle api, if you want to.
 
+we use [this kernel](https://www.kaggle.com/jimthompson/ensemble-model-stacked-model-example) to limit the features we use.
+
 ```{r}
-train <- read_csv("kaggle-house-prices/train.csv") %>% select(-Id) %>% clean_names()
-test <- read_csv("kaggle-house-prices/test.csv") %>% clean_names()
-test_id <- test$id
-test <- test %>% select(-id)
+CONFIRMED_ATTR_TRAIN <- c("MSSubClass","MSZoning","LotArea","LotShape","LandContour","Neighborhood",
+                    "BldgType","HouseStyle","OverallQual","OverallCond","YearBuilt",
+                    "YearRemodAdd","Exterior1st","Exterior2nd","MasVnrArea","ExterQual",
+                    "Foundation","BsmtQual","BsmtCond","BsmtFinType1","BsmtFinSF1",
+                    "BsmtFinType2","BsmtUnfSF","TotalBsmtSF","HeatingQC","CentralAir",
+                    "1stFlrSF","2ndFlrSF","GrLivArea","BsmtFullBath","FullBath","HalfBath",
+                    "BedroomAbvGr","KitchenAbvGr","KitchenQual","TotRmsAbvGrd","Functional",
+                    "Fireplaces","FireplaceQu","GarageType","GarageYrBlt","GarageFinish",
+                    "GarageCars","GarageArea","GarageQual","GarageCond","PavedDrive","WoodDeckSF",
+                    "OpenPorchSF","Fence","SalePrice")
+CONFIRMED_ATTR_TEST <- c("MSSubClass","MSZoning","LotArea","LotShape","LandContour","Neighborhood",
+                    "BldgType","HouseStyle","OverallQual","OverallCond","YearBuilt",
+                    "YearRemodAdd","Exterior1st","Exterior2nd","MasVnrArea","ExterQual",
+                    "Foundation","BsmtQual","BsmtCond","BsmtFinType1","BsmtFinSF1",
+                    "BsmtFinType2","BsmtUnfSF","TotalBsmtSF","HeatingQC","CentralAir",
+                    "1stFlrSF","2ndFlrSF","GrLivArea","BsmtFullBath","FullBath","HalfBath",
+                    "BedroomAbvGr","KitchenAbvGr","KitchenQual","TotRmsAbvGrd","Functional",
+                    "Fireplaces","FireplaceQu","GarageType","GarageYrBlt","GarageFinish",
+                    "GarageCars","GarageArea","GarageQual","GarageCond","PavedDrive","WoodDeckSF",
+                    "OpenPorchSF","Fence")
+
+TENTATIVE_ATTR <- c("Alley","LandSlope","Condition1","RoofStyle","MasVnrType","BsmtExposure",
+                    "Electrical","EnclosedPorch","SaleCondition")
+
+REJECTED_ATTR <- c("LotFrontage","Street","Utilities","LotConfig","Condition2","RoofMatl",
+                   "ExterCond","BsmtFinSF2","Heating","LowQualFinSF","BsmtHalfBath",
+                   "X3SsnPorch","ScreenPorch","PoolArea","PoolQC","MiscFeature","MiscVal",
+                   "MoSold","YrSold","SaleType")
+
+train_o <- read_csv("kaggle-house-prices/train.csv") 
+train <- train_o[c(CONFIRMED_ATTR_TRAIN)] %>% clean_names()
+train$sale_price <- log(train$sale_price)
+test_o <- read_csv("kaggle-house-prices/test.csv") 
+test <- test_o[c(CONFIRMED_ATTR_TEST)] %>% clean_names()
 sample_sub <- read_csv("kaggle-house-prices/sample_submission.csv")
 sample_sub %>% head()
 ```
@@ -75,6 +107,7 @@ xgbmodel <- train_model_xgb(train_structure = train_struct, hyperparameters = hy
 
 ```{r}
 pred_df <- get_predictions_xgb(xgbmodel, test_df = test)
+pred_df$sale_price <- exp(pred_df$sale_price)
 pred_df %>% head()
 ```
 
@@ -94,6 +127,7 @@ We see that while `simplexgb` will get you from start to submission in no time a
 ```{r}
 model_struct <- train_linear_model(train_structure = train_struct, model_structure = xgbmodel, hyperparameters = hyp)
 pred_df <- get_predictions_linear(model_struct, test_df = test) %>% abs()
+pred_df$sale_price <- exp(pred_df$sale_price)
 pred_df %>% head()
 submission <- sample_sub
 submission$Id <- test_id
@@ -104,7 +138,8 @@ submission %>% write_csv("kaggle-house-prices/submission_linear.csv")
 
 ```{r}
 model_struct <- train_rf_model(train_structure = train_struct, model_structure = model_struct, hyperparameters = hyp)
-pred_rf <- get_predictions_rf(model_structure = model_struct, test_df = test)
+spred_rf <- get_predictions_rf(model_structure = model_struct, test_df = test)
+pred_rf$sale_price <- exp(pred_rf$sale_price)
 pred_rf %>% head()
 submission <- sample_sub
 submission$Id <- test_id
