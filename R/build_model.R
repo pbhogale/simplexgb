@@ -155,7 +155,7 @@ train_model_xgb <- function(train_structure, hyperparameters){
 #' @param model_structure the model structure created by train xgb
 #' @export
 train_linear_model <- function(train_structure, model_structure, hyperparameters){
-  registerDoParallel(8)
+  doParallel::registerDoParallel(8)
   features <-Matrix::sparse.model.matrix(as.formula(paste(train_structure$target_variable, "~ .")),
                                          data = train_structure$data)[,-1]
   lab <- train_structure$data[[train_structure$target_variable]]
