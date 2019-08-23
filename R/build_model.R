@@ -56,7 +56,7 @@ guess_hyperparameters <- function(train_structure,
   }
   hyperparameters[["nrounds"]] <- max(nrounds, floor(hyperparameters[["depth"]]*log(hyperparameters[["n_estimators"]])))
   hyperparameters[['rf_trees']] <- floor(hyperparameters[["depth"]] * exp(floor(log(height)/2)))
-  hyperparameters[['rf_mtry']] <- min(floor(sqrt(nrow(train_structure$data) + floor(log(height)))), nrow(train_structure$data))
+  hyperparameters[['rf_mtry']] <- min(floor(sqrt(ncol(train_structure$data) + floor(log(height)))), ncol(train_structure$data))
   return(hyperparameters)
 }
 
