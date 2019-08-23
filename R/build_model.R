@@ -26,8 +26,8 @@ guess_hyperparameters <- function(train_structure,
                                          data = train_structure$data)[,-1]
   width <- ncol(features)
   height <- nrow(features)
-  hyperparameters[["depth"]] <- max(depth, floor(log(width)))
-  hyperparameters[["n_estimators"]] <- floor(max(n_estimators, exp(floor(log(height)/2))/hyperparameters[["depth"]]))
+  hyperparameters[["depth"]] <- max(depth, floor(sqrt(width)))
+  hyperparameters[["n_estimators"]] <- floor(max(n_estimators, exp(floor(log(height)))/hyperparameters[["depth"]]))
   hyperparameters[["learning_rate"]] <- min(learning_rate, 1/(log(hyperparameters[["n_estimators"]]*hyperparameters[["depth"]])))
   hyperparameters[['alpha']] <- log(hyperparameters[["n_estimators"]])*hyperparameters[["depth"]]*hyperparameters[["learning_rate"]]
   hyperparameters[['lambda']] <- log(hyperparameters[["n_estimators"]])*hyperparameters[["depth"]]*hyperparameters[["learning_rate"]]
@@ -336,15 +336,21 @@ get_predictions_rf <- function(model_structure, test_df){
       "multi:softprob") {
     preds <- predict(model_structure[["models"]][['rf_model']],
                                               data = norm_test_df)
-    prob_matrix <- 1-preds[['predictions']]
+    prob_matrix <- preds[['predictions']]
     predictions <- tibble::as_tibble(prob_matrix) %>% tail(nrow(test_df))
-    colnames(predictions) <- as.character(model_structure[["target_reference"]][[1]])
+    class_list <- model_structure$models$rf_model$forest$class.values
+    column_names_predictions <- list()
+    for (counter_classes in 1:length(class_list)){
+      column_names_predictions[counter_classes] <- model_structure[["target_reference"]][[1]][class_list[counter_classes]+1]
+    }
+    colnames(predictions) <- column_names_predictions
     cat_df <- predictions %>% tibble::rownames_to_column("row_id") %>%
       dplyr::mutate(row_id = as.numeric(row_id)) %>%
       tidyr::gather(category, value, -row_id) %>%
       dplyr::group_by(row_id) %>%
       dplyr::slice(which.max(value)) %>%
       dplyr::arrange(row_id)
+    # print(cat_df)
     predictions[["category"]] <- cat_df[["category"]]
   } else {
     preds <- predict(model_structure[["models"]][['rf_model']],
