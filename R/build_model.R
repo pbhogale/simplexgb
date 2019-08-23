@@ -207,7 +207,7 @@ get_predictions_xgb <- function (model_structure, test_df)
   level_cols <- colnames(levels_df)
   for (i in 1:length(level_cols)) {
     if (!(level_cols[i] %in% test_cols))
-      levels[[level_cols[[i]]]] <- NULL
+      levels_df[[level_cols[[i]]]] <- NULL
   }
   test_df[[model_structure[["target_variable"]]]] <- NULL
   test_df <- rationalize_categoricals(test_df)
@@ -262,7 +262,7 @@ get_predictions_linear <- function(model_structure, test_df){
   level_cols <- colnames(levels_df)
   for (i in 1:length(level_cols)) {
     if (!(level_cols[i] %in% test_cols))
-      levels[[level_cols[[i]]]] <- NULL
+      levels_df[[level_cols[[i]]]] <- NULL
   }
   test_df[[model_structure[["target_variable"]]]] <- NULL
   test_df <- rationalize_categoricals(test_df)
@@ -320,7 +320,7 @@ get_predictions_rf <- function(model_structure, test_df){
   level_cols <- colnames(levels_df)
   for (i in 1:length(level_cols)) {
     if (!(level_cols[i] %in% test_cols))
-      levels[[level_cols[[i]]]] <- NULL
+      levels_df[[level_cols[[i]]]] <- NULL
   }
   test_df[[model_structure[["target_variable"]]]] <- NULL
   test_df <- rationalize_categoricals(test_df)
