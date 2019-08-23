@@ -284,9 +284,11 @@ get_predictions_linear <- function(model_structure, test_df){
     prob_matrix <- matrix(preds, nrow = nrow(norm_test_df),
                           byrow = T)
     predictions <- tibble::as_tibble(prob_matrix) %>% tail(nrow(test_df))
+    print(predictions)
     if(length(as.character(model_structure[["target_reference"]][[1]]))==2){
       predictions <- predictions %>%
-        mutate(V2 = 1-V1)
+        mutate(V2 = V1) %>%
+        mutate(V1 = 1-V2)
     }
     colnames(predictions) <- as.character(model_structure[["target_reference"]][[1]])
     cat_df <- predictions %>% tibble::rownames_to_column("row_id") %>%
@@ -335,7 +337,7 @@ get_predictions_rf <- function(model_structure, test_df){
       "multi:softprob") {
     preds <- predict(model_structure[["models"]][['rf_model']],
                                               data = norm_test_df)
-    prob_matrix <- preds[['predictions']]
+    prob_matrix <- 1-preds[['predictions']]
     predictions <- tibble::as_tibble(prob_matrix) %>% tail(nrow(test_df))
     colnames(predictions) <- as.character(model_structure[["target_reference"]][[1]])
     cat_df <- predictions %>% tibble::rownames_to_column("row_id") %>%
