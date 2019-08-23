@@ -25,43 +25,12 @@ This vignette will use data from the [house prices kaggle contest](https://www.k
 
 If you have the kaggle api, use `kaggle competitions download -c house-prices-advanced-regression-techniques` to obtain the data. See [this blog](https://adityashrm21.github.io/Setting-Up-Kaggle/) to see how to setup the kaggle api, if you want to.
 
-we use [this kernel](https://www.kaggle.com/jimthompson/ensemble-model-stacked-model-example) to limit the features we use.
+we use [this kernel](https://www.kaggle.com/zongtseng/recipes-caret-caretensemble-xgboost-lasso-svm) to take us through the relevant steps.
 
 ```{r}
-CONFIRMED_ATTR_TRAIN <- c("MSSubClass","MSZoning","LotArea","LotShape","LandContour","Neighborhood",
-                    "BldgType","HouseStyle","OverallQual","OverallCond","YearBuilt",
-                    "YearRemodAdd","Exterior1st","Exterior2nd","MasVnrArea","ExterQual",
-                    "Foundation","BsmtQual","BsmtCond","BsmtFinType1","BsmtFinSF1",
-                    "BsmtFinType2","BsmtUnfSF","TotalBsmtSF","HeatingQC","CentralAir",
-                    "1stFlrSF","2ndFlrSF","GrLivArea","BsmtFullBath","FullBath","HalfBath",
-                    "BedroomAbvGr","KitchenAbvGr","KitchenQual","TotRmsAbvGrd","Functional",
-                    "Fireplaces","FireplaceQu","GarageType","GarageYrBlt","GarageFinish",
-                    "GarageCars","GarageArea","GarageQual","GarageCond","PavedDrive","WoodDeckSF",
-                    "OpenPorchSF","Fence","SalePrice")
-CONFIRMED_ATTR_TEST <- c("MSSubClass","MSZoning","LotArea","LotShape","LandContour","Neighborhood",
-                    "BldgType","HouseStyle","OverallQual","OverallCond","YearBuilt",
-                    "YearRemodAdd","Exterior1st","Exterior2nd","MasVnrArea","ExterQual",
-                    "Foundation","BsmtQual","BsmtCond","BsmtFinType1","BsmtFinSF1",
-                    "BsmtFinType2","BsmtUnfSF","TotalBsmtSF","HeatingQC","CentralAir",
-                    "1stFlrSF","2ndFlrSF","GrLivArea","BsmtFullBath","FullBath","HalfBath",
-                    "BedroomAbvGr","KitchenAbvGr","KitchenQual","TotRmsAbvGrd","Functional",
-                    "Fireplaces","FireplaceQu","GarageType","GarageYrBlt","GarageFinish",
-                    "GarageCars","GarageArea","GarageQual","GarageCond","PavedDrive","WoodDeckSF",
-                    "OpenPorchSF","Fence")
-
-TENTATIVE_ATTR <- c("Alley","LandSlope","Condition1","RoofStyle","MasVnrType","BsmtExposure",
-                    "Electrical","EnclosedPorch","SaleCondition")
-
-REJECTED_ATTR <- c("LotFrontage","Street","Utilities","LotConfig","Condition2","RoofMatl",
-                   "ExterCond","BsmtFinSF2","Heating","LowQualFinSF","BsmtHalfBath",
-                   "X3SsnPorch","ScreenPorch","PoolArea","PoolQC","MiscFeature","MiscVal",
-                   "MoSold","YrSold","SaleType")
-
-train_o <- read_csv("kaggle-house-prices/train.csv") 
-train <- train_o[c(CONFIRMED_ATTR_TRAIN)] %>% clean_names()
+train <- read_csv("kaggle-house-prices/train.csv") %>% clean_names()
 train$sale_price <- log(train$sale_price)
-test_o <- read_csv("kaggle-house-prices/test.csv") 
-test <- test_o[c(CONFIRMED_ATTR_TEST)] %>% clean_names()
+test <- read_csv("kaggle-house-prices/test.csv") %>% clean_names()
 sample_sub <- read_csv("kaggle-house-prices/sample_submission.csv")
 sample_sub %>% head()
 ```

@@ -25,6 +25,7 @@ Imports:
     glmnet,
     janitor,
     ranger,
+    recipes,
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,
