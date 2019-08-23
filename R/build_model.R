@@ -284,7 +284,6 @@ get_predictions_linear <- function(model_structure, test_df){
     prob_matrix <- matrix(preds, nrow = nrow(norm_test_df),
                           byrow = T)
     predictions <- tibble::as_tibble(prob_matrix) %>% tail(nrow(test_df))
-    print(predictions)
     if(length(as.character(model_structure[["target_reference"]][[1]]))==2){
       predictions <- predictions %>%
         mutate(V2 = V1) %>%
