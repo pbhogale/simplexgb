@@ -25,6 +25,7 @@ Imports:
     glmnet,
     janitor,
     ranger,
+    doParallel,
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,
