@@ -97,7 +97,6 @@ plot(model_struct[["models"]][["linear_model"]])
 ˆ
 ```{r}
 pred_df_linear <- get_predictions_linear(model_struct, test_df = test_df)
-pred_df_linear %>% head()
 test_df_preds <- test_df %>% 
   mutate(preds = pred_df_linear$category)
 table(test_df_preds$diagnosis, test_df_preds$preds)

@@ -26,6 +26,7 @@ Imports:
     janitor,
     ranger,
     recipes,
+    doParallel,
 RoxygenNote: 6.1.1
 Suggests: 
     knitr,

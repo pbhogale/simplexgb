@@ -26,7 +26,7 @@ guess_hyperparameters <- function(train_structure,
                                          data = train_structure$data)[,-1]
   width <- ncol(features)
   height <- nrow(features)
-  hyperparameters[["depth"]] <- max(depth, floor(log(width)))
+  hyperparameters[["depth"]] <- max(depth, floor(sqrt(width)))
   hyperparameters[["n_estimators"]] <- floor(max(n_estimators, exp(floor(log(height)))/hyperparameters[["depth"]]))
   hyperparameters[["learning_rate"]] <- min(learning_rate, 1/(log(hyperparameters[["n_estimators"]]*hyperparameters[["depth"]])))
   hyperparameters[['alpha']] <- log(hyperparameters[["n_estimators"]])*hyperparameters[["depth"]]*hyperparameters[["learning_rate"]]
@@ -55,8 +55,8 @@ guess_hyperparameters <- function(train_structure,
     hyperparameters[["eval_metric"]] <- eval_metric
   }
   hyperparameters[["nrounds"]] <- max(nrounds, floor(hyperparameters[["depth"]]*log(hyperparameters[["n_estimators"]])))
-  hyperparameters[['rf_trees']] <- floor(hyperparameters[["depth"]] * exp(floor(log(height))-2))
-  hyperparameters[['rf_mtry']] <- floor(sqrt(width + floor(log(height))))
+  hyperparameters[['rf_trees']] <- floor(sqrt(hyperparameters[["depth"]]) * exp(floor(log(height)/2)))
+  hyperparameters[['rf_mtry']] <- min(floor(sqrt(ncol(train_structure$data) + floor(log(height)))), ncol(train_structure$data))
   return(hyperparameters)
 }
 
@@ -155,6 +155,7 @@ train_model_xgb <- function(train_structure, hyperparameters){
 #' @param model_structure the model structure created by train xgb
 #' @export
 train_linear_model <- function(train_structure, model_structure, hyperparameters){
+  doParallel::registerDoParallel(8)
   features <-Matrix::sparse.model.matrix(as.formula(paste(train_structure$target_variable, "~ .")),
                                          data = train_structure$data)[,-1]
   lab <- train_structure$data[[train_structure$target_variable]]
@@ -206,7 +207,7 @@ get_predictions_xgb <- function (model_structure, test_df)
   level_cols <- colnames(levels_df)
   for (i in 1:length(level_cols)) {
     if (!(level_cols[i] %in% test_cols))
-      levels[[level_cols[[i]]]] <- NULL
+      levels_df[[level_cols[[i]]]] <- NULL
   }
   test_df[[model_structure[["target_variable"]]]] <- NULL
   test_df <- rationalize_categoricals(test_df)
@@ -261,7 +262,7 @@ get_predictions_linear <- function(model_structure, test_df){
   level_cols <- colnames(levels_df)
   for (i in 1:length(level_cols)) {
     if (!(level_cols[i] %in% test_cols))
-      levels[[level_cols[[i]]]] <- NULL
+      levels_df[[level_cols[[i]]]] <- NULL
   }
   test_df[[model_structure[["target_variable"]]]] <- NULL
   test_df <- rationalize_categoricals(test_df)
@@ -285,7 +286,8 @@ get_predictions_linear <- function(model_structure, test_df){
     predictions <- tibble::as_tibble(prob_matrix) %>% tail(nrow(test_df))
     if(length(as.character(model_structure[["target_reference"]][[1]]))==2){
       predictions <- predictions %>%
-        mutate(V2 = 1-V1)
+        mutate(V2 = V1) %>%
+        mutate(V1 = 1-V2)
     }
     colnames(predictions) <- as.character(model_structure[["target_reference"]][[1]])
     cat_df <- predictions %>% tibble::rownames_to_column("row_id") %>%
@@ -319,7 +321,7 @@ get_predictions_rf <- function(model_structure, test_df){
   level_cols <- colnames(levels_df)
   for (i in 1:length(level_cols)) {
     if (!(level_cols[i] %in% test_cols))
-      levels[[level_cols[[i]]]] <- NULL
+      levels_df[[level_cols[[i]]]] <- NULL
   }
   test_df[[model_structure[["target_variable"]]]] <- NULL
   test_df <- rationalize_categoricals(test_df)
@@ -336,13 +338,19 @@ get_predictions_rf <- function(model_structure, test_df){
                                               data = norm_test_df)
     prob_matrix <- preds[['predictions']]
     predictions <- tibble::as_tibble(prob_matrix) %>% tail(nrow(test_df))
-    colnames(predictions) <- as.character(model_structure[["target_reference"]][[1]])
+    class_list <- model_structure$models$rf_model$forest$class.values
+    column_names_predictions <- list()
+    for (counter_classes in 1:length(class_list)){
+      column_names_predictions[counter_classes] <- model_structure[["target_reference"]][[1]][class_list[counter_classes]+1]
+    }
+    colnames(predictions) <- column_names_predictions
     cat_df <- predictions %>% tibble::rownames_to_column("row_id") %>%
       dplyr::mutate(row_id = as.numeric(row_id)) %>%
       tidyr::gather(category, value, -row_id) %>%
       dplyr::group_by(row_id) %>%
       dplyr::slice(which.max(value)) %>%
       dplyr::arrange(row_id)
+    # print(cat_df)
     predictions[["category"]] <- cat_df[["category"]]
   } else {
     preds <- predict(model_structure[["models"]][['rf_model']],
