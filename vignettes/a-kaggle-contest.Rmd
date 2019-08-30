@@ -29,8 +29,8 @@ we use [this kernel](https://www.kaggle.com/zongtseng/recipes-caret-caretensembl
 
 ```{r}
 train <- read_csv("kaggle-house-prices/train.csv") %>% clean_names()
-train$sale_price <- log(train$sale_price)
 test <- read_csv("kaggle-house-prices/test.csv") %>% clean_names()
+test_id <- test$id
 sample_sub <- read_csv("kaggle-house-prices/sample_submission.csv")
 sample_sub %>% head()
 ```
@@ -76,7 +76,6 @@ xgbmodel <- train_model_xgb(train_structure = train_struct, hyperparameters = hy
 
 ```{r}
 pred_df <- get_predictions_xgb(xgbmodel, test_df = test)
-pred_df$sale_price <- exp(pred_df$sale_price)
 pred_df %>% head()
 ```
 
@@ -96,7 +95,6 @@ We see that while `simplexgb` will get you from start to submission in no time a
 ```{r}
 model_struct <- train_linear_model(train_structure = train_struct, model_structure = xgbmodel, hyperparameters = hyp)
 pred_df <- get_predictions_linear(model_struct, test_df = test) %>% abs()
-pred_df$sale_price <- exp(pred_df$sale_price)
 pred_df %>% head()
 submission <- sample_sub
 submission$Id <- test_id
@@ -107,8 +105,7 @@ submission %>% write_csv("kaggle-house-prices/submission_linear.csv")
 
 ```{r}
 model_struct <- train_rf_model(train_structure = train_struct, model_structure = model_struct, hyperparameters = hyp)
-spred_rf <- get_predictions_rf(model_structure = model_struct, test_df = test)
-pred_rf$sale_price <- exp(pred_rf$sale_price)
+pred_rf <- get_predictions_rf(model_structure = model_struct, test_df = test)
 pred_rf %>% head()
 submission <- sample_sub
 submission$Id <- test_id
