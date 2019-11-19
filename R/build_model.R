@@ -27,10 +27,16 @@ guess_hyperparameters <- function(train_structure,
   width <- ncol(features)
   height <- nrow(features)
   hyperparameters[["depth"]] <- max(depth, floor(sqrt(width)))
-  hyperparameters[["n_estimators"]] <- floor(max(n_estimators, exp(floor(log(height)))/hyperparameters[["depth"]]))
-  hyperparameters[["learning_rate"]] <- min(learning_rate, 1/(log(hyperparameters[["n_estimators"]]*hyperparameters[["depth"]])))
-  hyperparameters[['alpha']] <- log(hyperparameters[["n_estimators"]])*hyperparameters[["depth"]]*hyperparameters[["learning_rate"]]
-  hyperparameters[['lambda']] <- log(hyperparameters[["n_estimators"]])*hyperparameters[["depth"]]*hyperparameters[["learning_rate"]]
+  hyperparameters[["n_estimators"]] <- {floor(max(n_estimators,
+                                                 exp(floor(log(height)))/
+                                                   hyperparameters[["depth"]])) %>% log() %>% `-`(1) %>% exp() %>% floor()}
+  hyperparameters[["learning_rate"]] <- min(learning_rate,
+                                            1/(log(hyperparameters[["n_estimators"]]*
+                                                     hyperparameters[["depth"]])
+                                               )
+                                            )
+  hyperparameters[['alpha']] <- log(hyperparameters[["n_estimators"]]) * hyperparameters[["depth"]] * hyperparameters[["learning_rate"]]
+  hyperparameters[['lambda']] <- log(hyperparameters[["n_estimators"]]) * hyperparameters[["depth"]] * hyperparameters[["learning_rate"]]
   class_target <- ("target_reference" %in% names(train_structure))
   if(class_target){
     hyperparameters[['rf_probability']] <- TRUE
@@ -279,7 +285,7 @@ get_predictions_linear <- function(model_structure, test_df){
 
   if (model_structure[["models"]][['model_xgb']][["params"]][["objective"]] ==
       "multi:softprob") {
-    preds <- plogis(glmnet::predict.cv.glmnet(model_structure[["models"]][['linear_model']],
+    preds <- plogis(stats::predict(model_structure[["models"]][['linear_model']],
                                               newx = features, s = "lambda.min"))
     prob_matrix <- matrix(preds, nrow = nrow(norm_test_df),
                           byrow = T)
@@ -299,7 +305,7 @@ get_predictions_linear <- function(model_structure, test_df){
     predictions[["category"]] <- cat_df[["category"]]
   }
   else {
-    preds <- glmnet::predict.cv.glmnet(model_structure[["models"]][['linear_model']],
+    preds <- stats::predict(model_structure[["models"]][['linear_model']],
                                        newx = features, s = "lambda.min")
     predictions <- tibble::tibble(prediction = preds[1:nrow(test_df)])
     colnames(predictions) <- model_structure[["target_variable"]]
