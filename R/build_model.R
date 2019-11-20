@@ -288,7 +288,7 @@ get_predictions_linear <- function(model_structure, test_df){
 
   if (model_structure[["models"]][['model_xgb']][["params"]][["objective"]] ==
       "multi:softprob") {
-    preds <- plogis(stats::predict(model_structure[["models"]][['linear_model']],
+    preds <- plogis(predict(model_structure[["models"]][['linear_model']],
                                               newx = features, s = "lambda.min"))
     prob_matrix <- matrix(preds, nrow = nrow(norm_test_df),
                           byrow = T)
@@ -308,7 +308,7 @@ get_predictions_linear <- function(model_structure, test_df){
     predictions[["category"]] <- cat_df[["category"]]
   }
   else {
-    preds <- stats::predict(model_structure[["models"]][['linear_model']],
+    preds <- predict(model_structure[["models"]][['linear_model']],
                                        newx = features, s = "lambda.min")
     predictions <- tibble::tibble(prediction = preds[1:nrow(test_df)])
     colnames(predictions) <- model_structure[["target_variable"]]
