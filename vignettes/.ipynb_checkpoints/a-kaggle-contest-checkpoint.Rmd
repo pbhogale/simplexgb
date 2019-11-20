@@ -27,8 +27,6 @@ If you have the kaggle api, use `kaggle competitions download -c house-prices-ad
 
 ```{r}
 train <- read_csv("kaggle-house-prices/train.csv") %>% select(-Id) %>% clean_names()
-train <- rbind(train,train,train,train,train,train,train,train
-               )
 test <- read_csv("kaggle-house-prices/test.csv") %>% clean_names()
 test_id <- test$id
 test <- test %>% select(-id)

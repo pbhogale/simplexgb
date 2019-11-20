@@ -177,10 +177,13 @@ train_linear_model <- function(train_structure, model_structure, hyperparameters
 #' @param model_structure the model structure created by train xgb
 #' @export
 train_rf_model <- function(train_structure, model_structure, hyperparameters){
-  rf_model <- ranger::ranger(formula = as.formula(paste(train_structure$target_variable, "~ .")),
+  rf_model <- ranger::ranger(dependent.variable.name=train_structure[["target_variable"]],
+                            #  formula = as.formula(paste(train_structure$target_variable, "~ .")),
                              data = train_structure$data,
                              num.trees = hyperparameters[['rf_trees']],mtry = hyperparameters[['rf_mtry']],
-                             probability = hyperparameters[['rf_probability']])
+                             probability = hyperparameters[['rf_probability']],
+                             save.memory = TRUE
+                             )
   model_structure[['models']][['rf_model']] <- rf_model
   return(model_structure)
 }
