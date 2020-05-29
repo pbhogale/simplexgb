@@ -165,7 +165,7 @@ train_linear_model <- function(train_structure, model_structure, hyperparameters
   features <-Matrix::sparse.model.matrix(as.formula(paste(train_structure$target_variable, "~ .")),
                                          data = train_structure$data)[,-1]
   lab <- train_structure$data[[train_structure$target_variable]]
-  linear_model <- glmnet::cv.glmnet(features, lab, family = hyperparameters[["glmnet_family"]], parallel = TRUE)
+  linear_model <- glmnet::glmnet(features, lab, family = hyperparameters[["glmnet_family"]], parallel = TRUE)
   model_structure[['models']][['linear_model']] <- linear_model
   return(model_structure)
 }
@@ -288,7 +288,7 @@ get_predictions_linear <- function(model_structure, test_df){
 
   if (model_structure[["models"]][['model_xgb']][["params"]][["objective"]] ==
       "multi:softprob") {
-    preds <- plogis(glmnet::predict.cv.glmnet(model_structure[["models"]][['linear_model']],
+    preds <- plogis(glmnet::predict.glmnet(model_structure[["models"]][['linear_model']],
                                               newx = features, s = "lambda.min"))
     prob_matrix <- matrix(preds, nrow = nrow(norm_test_df),
                           byrow = T)
@@ -308,7 +308,7 @@ get_predictions_linear <- function(model_structure, test_df){
     predictions[["category"]] <- cat_df[["category"]]
   }
   else {
-    preds <- glmnet::predict.cv.glmnet(model_structure[["models"]][['linear_model']],
+    preds <- glmnet::predict.glmnet(model_structure[["models"]][['linear_model']],
                                        newx = features, s = "lambda.min")
     predictions <- tibble::tibble(prediction = preds[1:nrow(test_df)])
     colnames(predictions) <- model_structure[["target_variable"]]
