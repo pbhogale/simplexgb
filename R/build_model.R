@@ -289,7 +289,7 @@ get_predictions_linear <- function(model_structure, test_df){
   if (model_structure[["models"]][['model_xgb']][["params"]][["objective"]] ==
       "multi:softprob") {
     preds <- plogis(glmnet::predict.glmnet(model_structure[["models"]][['linear_model']],
-                                              newx = features, s = "lambda.min"))
+                                              newx = features))
     prob_matrix <- matrix(preds, nrow = nrow(norm_test_df),
                           byrow = T)
     predictions <- tibble::as_tibble(prob_matrix) %>% tail(nrow(test_df))
@@ -309,7 +309,7 @@ get_predictions_linear <- function(model_structure, test_df){
   }
   else {
     preds <- glmnet::predict.glmnet(model_structure[["models"]][['linear_model']],
-                                       newx = features, s = "lambda.min")
+                                       newx = features)
     predictions <- tibble::tibble(prediction = preds[1:nrow(test_df)])
     colnames(predictions) <- model_structure[["target_variable"]]
   }
