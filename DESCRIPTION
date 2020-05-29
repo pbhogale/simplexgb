@@ -18,7 +18,7 @@ Imports:
     forcats,
     tibble,
     Matrix,
-    glmnet (<= 2.0-18),
+    glmnet,
     janitor,
     ranger,
     doParallel,

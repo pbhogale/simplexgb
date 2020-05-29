@@ -13,8 +13,7 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  warning = FALSE
-)
+  warning = FALSE)
 ```
 
 Data munging is hard, needs intuition and craftsmanship, but most ML issues are quite standard once the data has been understood. `simplexgb` is intended to help you handle most ML usecases without straying too far from the [tidyverse](https://www.tidyverse.org/), while still utilizing the versatility and scalability of [xgboost](https://xgboost.readthedocs.io/en/latest/). To setup xgboost correctly on your system so that it uses all your cores/GPUs to train, see [this page](https://xgboost.readthedocs.io/en/latest/build.html).
@@ -34,15 +33,16 @@ We first illustrate the workflow with a regression problem, and then repeat the 
 library(magrittr)
 library(dplyr)
 library(janitor)
-library(simplexgb)
+# devtools::install_github("pbhogale/simplexgb")
+# library(simplexgb)
 data(wisccancerdata)
-train_struct <- prepare_training_set(df = wisc_cancer_data, target_variable = 'diagnosis')
+train_struct <- simplexgb::prepare_training_set(df = wisc_cancer_data, target_variable = 'diagnosis')
 ```
 
 3. **Guess hyperparameters :** `simplexgb` takes some reasonable values of relevant hyperparameters depending on the size of your data set. You can tune these for better performance as you iterate. For now, we will simply take the default guesses that `simplexgb` generates for us. 
 
 ```{r}
-hyp <- guess_hyperparameters(train_structure = train_struct)
+hyp <- simplexgb::guess_hyperparameters(train_structure = train_struct)
 hyp %>% print()
 ```
 
@@ -51,7 +51,7 @@ hyp %>% print()
 4. **Evaluate performance :** For any dataset (that includes some work on feature engineering) and a set of hyperparameters, we should evaluate how well a model with those hyperparameters trained on that dataset will perform using cross validation. 
 
 ```{r}
-cv_results <- cross_validate_xgb(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
+cv_results <- simplexgb::cross_validate_xgb(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
 print(cv_results$metric)
 print(cv_results$confusion_matrix)
 ```
@@ -67,16 +67,16 @@ train_ind <- sample(seq_len(nrow(wisc_cancer_data)), size = smp_size)
 train_df <- wisc_cancer_data[train_ind, ]
 test_df <- wisc_cancer_data[-train_ind, ]
 
-train_struct <- prepare_training_set(train_df, target_variable = 'diagnosis')
-hyp <- guess_hyperparameters(train_structure = train_struct)
-xgbmodel <- train_model_xgb(train_structure = train_struct, hyperparameters = hyp)
+train_struct <- simplexgb::prepare_training_set(train_df, target_variable = 'diagnosis')
+hyp <- simplexgb::guess_hyperparameters(train_structure = train_struct)
+xgbmodel <- simplexgb::train_model_xgb(train_structure = train_struct, hyperparameters = hyp)
 ```
 
 
 6. **Predict on the test set :** Nothing could be simpler. 
 
 ```{r}
-pred_df <- get_predictions_xgb(xgbmodel, test_df = test_df)
+pred_df <- simplexgb::get_predictions_xgb(xgbmodel, test_df = test_df)
 pred_df %>% head()
 test_df_preds <- test_df %>% 
   mutate(preds = pred_df$category)
@@ -90,14 +90,15 @@ We see for this data set, we obtain excellent performance just with the standard
 we use the `glmnet` package for linear models for multinomial, binomial and linear regression with gaussian errors. Other families are yet to be implemented (poisson, cox etc).
 
 ```{r}
-model_struct <- train_linear_model(train_struct, xgbmodel, hyp)
+model_struct <- simplexgb::train_linear_model(train_struct, xgbmodel, hyp)
 plot(model_struct[["models"]][["linear_model"]])
 ```
 
 ˆ
 ```{r}
-pred_df_linear <- get_predictions_linear(model_struct, test_df = test_df)
-test_df_preds <- test_df %>% 
+pred_df_linear <- simplexgb::get_predictions_linear(model_struct, test_df = test_df)
+pred_df_linear %>% dim()
+test_df_preds <- test_df %>%
   mutate(preds = pred_df_linear$category)
 table(test_df_preds$diagnosis, test_df_preds$preds)
 ```
@@ -105,8 +106,8 @@ table(test_df_preds$diagnosis, test_df_preds$preds)
 ## RF model
 
 ```{r}
-model_struct <- train_rf_model(train_structure = train_struct, model_structure = model_struct, hyperparameters = hyp)
-preds_rf <- get_predictions_rf(model_structure = model_struct, test_df = test_df)
+model_struct <- simplexgb::train_rf_model(train_structure = train_struct, model_structure = model_struct, hyperparameters = hyp)
+preds_rf <- simplexgb::get_predictions_rf(model_structure = model_struct, test_df = test_df)
 test_df_preds <- test_df %>% 
   mutate(preds = preds_rf$category)
 table(test_df_preds$diagnosis, test_df_preds$preds)

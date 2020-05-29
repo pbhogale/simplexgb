@@ -165,7 +165,7 @@ train_linear_model <- function(train_structure, model_structure, hyperparameters
   features <-Matrix::sparse.model.matrix(as.formula(paste(train_structure$target_variable, "~ .")),
                                          data = train_structure$data)[,-1]
   lab <- train_structure$data[[train_structure$target_variable]]
-  linear_model <- glmnet::glmnet(features, lab, family = hyperparameters[["glmnet_family"]], parallel = TRUE)
+  linear_model <- glmnet::cv.glmnet(features, lab, family = hyperparameters[["glmnet_family"]], parallel = TRUE)
   model_structure[['models']][['linear_model']] <- linear_model
   return(model_structure)
 }
@@ -299,12 +299,15 @@ get_predictions_linear <- function(model_structure, test_df){
         mutate(V1 = 1-V2)
     }
     colnames(predictions) <- as.character(model_structure[["target_reference"]][[1]])
-    cat_df <- predictions %>% tibble::rownames_to_column("row_id") %>%
-      dplyr::mutate(row_id = as.numeric(row_id)) %>%
-      tidyr::gather(category, value, -row_id) %>%
+    cat_df <- predictions %>% tibble::rownames_to_column(var = "row_id")
+    cat_df %>%
+      dplyr::mutate(row_id = as.numeric(row_id)) -> cat_df
+    cat_df %>%
+      tidyr::gather(category, value, -row_id) -> cat_df
+    cat_df %>%
       dplyr::group_by(row_id) %>%
       dplyr::slice(which.max(value)) %>%
-      dplyr::arrange(row_id)
+      dplyr::arrange(row_id) -> cat_df
     predictions[["category"]] <- cat_df[["category"]]
   }
   else {

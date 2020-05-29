@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 library(tidyverse)
-library(simplexgb)
+# library(simplexgb)
 library(janitor)
 ```
 
@@ -43,7 +43,7 @@ This data set has a lot of missing values. If we removed all rows which had a mi
 #### Preparing the training structure
 
 ```{r}
-train_struct <- prepare_training_set(df = train, target_variable = "sale_price")
+train_struct <- simplexgb::prepare_training_set(df = train, target_variable = "sale_price")
 ```
 
 
@@ -52,14 +52,14 @@ train_struct <- prepare_training_set(df = train, target_variable = "sale_price")
 **Guessing the hyperparameters**
 
 ```{r}
-hyp <- guess_hyperparameters(train_structure = train_struct)
+hyp <- simplexgb::guess_hyperparameters(train_structure = train_struct)
 hyp %>% print()
 ```
 
 **Cross validation**
 
 ```{r}
-cv_results <- cross_validate_xgb(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
+cv_results <- simplexgb::cross_validate_xgb(train_structure = train_struct, hyperparameters = hyp, nfold = 5)
 print(cv_results$metric)
 ```
 
@@ -68,15 +68,15 @@ It is not really clear what that means, but let us see how we perform if we make
 **Training a model**
 
 ```{r}
-hyp <- guess_hyperparameters(train_structure = train_struct)
+hyp <- simplexgb::guess_hyperparameters(train_structure = train_struct)
 print(hyp)
-xgbmodel <- train_model_xgb(train_structure = train_struct, hyperparameters = hyp)
+xgbmodel <- simplexgb::train_model_xgb(train_structure = train_struct, hyperparameters = hyp)
 ```
 
 **Predicting on the test set**
 
 ```{r}
-pred_df <- get_predictions_xgb(xgbmodel, test_df = test)
+pred_df <- simplexgb::get_predictions_xgb(xgbmodel, test_df = test)
 pred_df %>% head()
 ```
 
@@ -94,8 +94,8 @@ We see that while `simplexgb` will get you from start to submission in no time a
 ## Linear model
 
 ```{r}
-model_struct <- train_linear_model(train_structure = train_struct, model_structure = xgbmodel, hyperparameters = hyp)
-pred_df <- get_predictions_linear(model_struct, test_df = test) %>% abs()
+model_struct <- simplexgb::train_linear_model(train_structure = train_struct, model_structure = xgbmodel, hyperparameters = hyp)
+pred_df <- simplexgb::get_predictions_linear(model_struct, test_df = test) %>% abs()
 pred_df %>% head()
 submission <- sample_sub
 submission$Id <- test_id
@@ -105,8 +105,8 @@ submission %>% write_csv("kaggle-house-prices/submission_linear.csv")
 ## RF model
 
 ```{r}
-model_struct <- train_rf_model(train_structure = train_struct, model_structure = model_struct, hyperparameters = hyp)
-pred_rf <- get_predictions_rf(model_structure = model_struct, test_df = test)
+model_struct <- simplexgb::train_rf_model(train_structure = train_struct, model_structure = model_struct, hyperparameters = hyp)
+pred_rf <- simplexgb::get_predictions_rf(model_structure = model_struct, test_df = test)
 pred_rf %>% head()
 submission <- sample_sub
 submission$Id <- test_id
