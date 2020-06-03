@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
 library(tidyverse)
 # library(simplexgb)
 library(janitor)
+Sys.setenv(KMP_DUPLICATE_LIB_OK=T)
 ```
 
 This vignette will use data from the [house prices kaggle contest](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/overview). This vignette will focus on thge simplest possible data cleaning and rely on the sensible defaults in `simplexgb` to construct a submission and evaluate the results on kaggle. For a more comprehensive data exploration of this data set check [this kernel](https://www.kaggle.com/erikbruin/house-prices-lasso-xgboost-and-a-detailed-eda)
